@@ -4,10 +4,10 @@ import axios from 'axios'
 import qs from 'qs'
 import get from 'lodash/get'
 
-let ui = defaultConfig()
+export let config = defaultConfig()
 
 if (process.env.$pleasure) {
-  ui = process.env.$pleasure.ui
+  config = process.env.$pleasure.config
 }
 
 /**
@@ -16,7 +16,7 @@ if (process.env.$pleasure) {
  * @param {Number} timeout - Timeout in milliseconds
  * @return {Object} - axios instance
  */
-export function getDriver ({ baseURL = ui.api.baseURL, timeout = ui.api.timeout } = {}) {
+export function getDriver ({ baseURL = config.api.baseURL, timeout = config.api.timeout } = {}) {
   const driver = axios.create({
     timeout,
     baseURL,

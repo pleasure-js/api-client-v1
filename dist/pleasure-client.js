@@ -66,10 +66,10 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
     }
   }
 
-  let ui = defaultConfig();
+  exports.config = defaultConfig();
 
   if (process.env.$pleasure) {
-    ui = process.env.$pleasure.ui;
+    exports.config = process.env.$pleasure.config;
   }
 
   /**
@@ -78,7 +78,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    * @param {Number} timeout - Timeout in milliseconds
    * @return {Object} - axios instance
    */
-  function getDriver ({ baseURL = ui.api.baseURL, timeout = ui.api.timeout } = {}) {
+  function getDriver ({ baseURL = exports.config.api.baseURL, timeout = exports.config.api.timeout } = {}) {
     const driver = axios.create({
       timeout,
       baseURL,
@@ -118,10 +118,10 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    */
   var driver = getDriver();
 
-  let ui$1 = defaultConfig();
+  let ui = defaultConfig();
 
   if (process.env.$pleasure) {
-    ui$1 = process.env.$pleasure.ui;
+    ui = process.env.$pleasure.ui;
   }
 
   /*
@@ -296,7 +296,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
      * @param {String} [options.accessToken] - Optional accessToken in case to start the driver with a session.
      * @param {String} [options.refreshToken] - Optional refreshToken in case to start the driver with a session.
      */
-    constructor ({ accessToken, refreshToken, driver = getDriver(), config = ui$1 } = {}) {
+    constructor ({ accessToken, refreshToken, driver = getDriver(), config = ui } = {}) {
       const { baseURL } = driver.defaults;
       super(baseURL);
 

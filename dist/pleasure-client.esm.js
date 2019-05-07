@@ -64,10 +64,10 @@ function defaultConfig (localConfig = {}) {
   }
 }
 
-let ui = defaultConfig();
+let config = defaultConfig();
 
 if (process.env.$pleasure) {
-  ui = process.env.$pleasure.ui;
+  config = process.env.$pleasure.config;
 }
 
 /**
@@ -76,7 +76,7 @@ if (process.env.$pleasure) {
  * @param {Number} timeout - Timeout in milliseconds
  * @return {Object} - axios instance
  */
-function getDriver ({ baseURL = ui.api.baseURL, timeout = ui.api.timeout } = {}) {
+function getDriver ({ baseURL = config.api.baseURL, timeout = config.api.timeout } = {}) {
   const driver = axios.create({
     timeout,
     baseURL,
@@ -116,10 +116,10 @@ function getDriver ({ baseURL = ui.api.baseURL, timeout = ui.api.timeout } = {})
  */
 var driver = getDriver();
 
-let ui$1 = defaultConfig();
+let ui = defaultConfig();
 
 if (process.env.$pleasure) {
-  ui$1 = process.env.$pleasure.ui;
+  ui = process.env.$pleasure.ui;
 }
 
 /*
@@ -294,7 +294,7 @@ class PleasureClient extends ReduxClient {
    * @param {String} [options.accessToken] - Optional accessToken in case to start the driver with a session.
    * @param {String} [options.refreshToken] - Optional refreshToken in case to start the driver with a session.
    */
-  constructor ({ accessToken, refreshToken, driver = getDriver(), config = ui$1 } = {}) {
+  constructor ({ accessToken, refreshToken, driver = getDriver(), config = ui } = {}) {
     const { baseURL } = driver.defaults;
     super(baseURL);
 
@@ -956,4 +956,4 @@ class PleasureClient extends ReduxClient {
 const pleasureClient = new PleasureClient();
 
 export default pleasureClient;
-export { ApiError, PleasureClient, driver as apiDriver, defaultConfig, getDriver };
+export { ApiError, PleasureClient, driver as apiDriver, config, defaultConfig, getDriver };
