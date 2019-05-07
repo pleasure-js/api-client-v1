@@ -6,10 +6,6 @@ import get from 'lodash/get'
 
 export let config = defaultConfig()
 
-if (process.env.$pleasure) {
-  config = process.env.$pleasure.config
-}
-
 /**
  * Creates an axios instance able to handle API responses
  * @param {String} baseURL - URL of the API

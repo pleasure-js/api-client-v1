@@ -14,9 +14,12 @@ import url from 'url'
 
 let ui = defaultConfig()
 
+console.log({ ui })
+
 if (process.env.$pleasure) {
   ui = process.env.$pleasure.ui
 }
+console.log(`>>>`, { ui })
 
 /*
  todo: implement socket.io-client

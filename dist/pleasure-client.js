@@ -55,6 +55,11 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    * @exports {ClientConfig}
    */
   function defaultConfig (localConfig = {}) {
+
+    if (process.env.$pleasure) {
+      config = process.env.$pleasure.config;
+    }
+
     return {
       api: merge({
         baseURL: 'http://localhost:3000/api',
@@ -66,11 +71,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
     }
   }
 
-  exports.config = defaultConfig();
-
-  if (process.env.$pleasure) {
-    exports.config = process.env.$pleasure.config;
-  }
+  let config$1 = defaultConfig();
 
   /**
    * Creates an axios instance able to handle API responses
@@ -78,7 +79,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    * @param {Number} timeout - Timeout in milliseconds
    * @return {Object} - axios instance
    */
-  function getDriver ({ baseURL = exports.config.api.baseURL, timeout = exports.config.api.timeout } = {}) {
+  function getDriver ({ baseURL = config$1.api.baseURL, timeout = config$1.api.timeout } = {}) {
     const driver = axios.create({
       timeout,
       baseURL,
@@ -120,9 +121,12 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
 
   let ui = defaultConfig();
 
+  console.log({ ui });
+
   if (process.env.$pleasure) {
     ui = process.env.$pleasure.ui;
   }
+  console.log(`>>>`, { ui });
 
   /*
    todo: implement socket.io-client
@@ -960,6 +964,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
   exports.ApiError = ApiError;
   exports.PleasureClient = PleasureClient;
   exports.apiDriver = driver;
+  exports.config = config$1;
   exports.default = pleasureClient;
   exports.defaultConfig = defaultConfig;
   exports.getDriver = getDriver;

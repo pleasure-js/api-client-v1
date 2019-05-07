@@ -53,6 +53,11 @@ class ApiError extends Error {
  * @exports {ClientConfig}
  */
 function defaultConfig (localConfig = {}) {
+
+  if (process.env.$pleasure) {
+    config = process.env.$pleasure.config;
+  }
+
   return {
     api: merge({
       baseURL: 'http://localhost:3000/api',
@@ -64,11 +69,7 @@ function defaultConfig (localConfig = {}) {
   }
 }
 
-let config = defaultConfig();
-
-if (process.env.$pleasure) {
-  config = process.env.$pleasure.config;
-}
+let config$1 = defaultConfig();
 
 /**
  * Creates an axios instance able to handle API responses
@@ -76,7 +77,7 @@ if (process.env.$pleasure) {
  * @param {Number} timeout - Timeout in milliseconds
  * @return {Object} - axios instance
  */
-function getDriver ({ baseURL = config.api.baseURL, timeout = config.api.timeout } = {}) {
+function getDriver ({ baseURL = config$1.api.baseURL, timeout = config$1.api.timeout } = {}) {
   const driver = axios.create({
     timeout,
     baseURL,
@@ -118,9 +119,12 @@ var driver = getDriver();
 
 let ui = defaultConfig();
 
+console.log({ ui });
+
 if (process.env.$pleasure) {
   ui = process.env.$pleasure.ui;
 }
+console.log(`>>>`, { ui });
 
 /*
  todo: implement socket.io-client
@@ -956,4 +960,4 @@ class PleasureClient extends ReduxClient {
 const pleasureClient = new PleasureClient();
 
 export default pleasureClient;
-export { ApiError, PleasureClient, driver as apiDriver, config, defaultConfig, getDriver };
+export { ApiError, PleasureClient, driver as apiDriver, config$1 as config, defaultConfig, getDriver };

@@ -14,6 +14,11 @@ import merge from 'deepmerge'
  * @exports {ClientConfig}
  */
 export default function (localConfig = {}) {
+
+  if (process.env.$pleasure) {
+    config = process.env.$pleasure.config
+  }
+
   return {
     api: merge({
       baseURL: 'http://localhost:3000/api',
