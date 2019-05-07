@@ -12,24 +12,9 @@ import defaultConfig from './lib/default-config.js'
 import io from 'socket.io-client'
 import url from 'url'
 
-let ui = defaultConfig()
+let _config = defaultConfig()
 
-console.log({ ui })
-
-if (process.env.$pleasure) {
-  ui = process.env.$pleasure.ui
-}
-console.log(`>>>`, { ui })
-
-/*
- todo: implement socket.io-client
-  extend EventEmitter with:
-  `on('update', entryUpdated => console.log(entryUpdated))` or pleasureClient.users.on('update', 'id')` or
-  `pleasureClient.users.on('create', entry => console.log(entry))` or
-  `pleasureClient.users.on('delete', 'id', entry => console.log(entry))` or
-  `pleasureClient.users.on('delete', entryDeleted => console.log(entryDeleted))`
-
- */
+console.log({ _config })
 
 class ReduxClient extends EventEmitter {
   constructor (apiURL) {
@@ -163,7 +148,7 @@ class ReduxClient extends EventEmitter {
 
 /**
  * Client for querying the API server.
- * @name pleasure/PleasureClient
+ * @name PleasureClient
  *
  * @see {@link pleasureClient} for a singleton instance of this class.
  *
@@ -193,7 +178,7 @@ export class PleasureClient extends ReduxClient {
    * @param {String} [options.accessToken] - Optional accessToken in case to start the driver with a session.
    * @param {String} [options.refreshToken] - Optional refreshToken in case to start the driver with a session.
    */
-  constructor ({ accessToken, refreshToken, driver = getDriver(), config = ui } = {}) {
+  constructor ({ accessToken, refreshToken, driver = getDriver(), config = _config } = {}) {
     const { baseURL } = driver.defaults
     super(baseURL)
 
@@ -202,6 +187,7 @@ export class PleasureClient extends ReduxClient {
     this._refreshToken = refreshToken
     this._userProfile = null
     this._cache = []
+    console.log({ config })
     this.config = config
 
     /**
@@ -454,7 +440,7 @@ export class PleasureClient extends ReduxClient {
   async login (credentials, params = {}) {
     this._localLogout()
     const { accessToken, refreshToken } = await this.driver({
-      url: `${ this.config.api.authEndpoint }`,
+      url: `${ this.config.authEndpoint }`,
       method: 'post',
       data: credentials,
       params
@@ -477,7 +463,7 @@ export class PleasureClient extends ReduxClient {
   async logout () {
     // todo: hit and endpoint that blacklists the session
     await this._driver({
-      url: `${ this.config.api.revokeEndpoint }`,
+      url: `${ this.config.revokeEndpoint }`,
       method: 'post'
     })
     return this._localLogout()
@@ -571,7 +557,7 @@ export class PleasureClient extends ReduxClient {
    * @return {Object} - Pleasure Entity Schema
    */
   getEntities () {
-    return this.driver({ url: this.config.api.entitiesUri })
+    return this.driver({ url: this.config.entitiesUri })
   }
 
   /**

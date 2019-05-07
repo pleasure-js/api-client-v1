@@ -55,23 +55,26 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    * @exports {ClientConfig}
    */
   function defaultConfig (localConfig = {}) {
+    let config = {};
 
-    if (process.env.$pleasure) {
-      config = process.env.$pleasure.config;
+    if (process.env.$pleasure && process.env.$pleasure.pleasureClient) {
+      config = process.env.$pleasure.pleasureClient;
     }
 
-    return {
-      api: merge({
-        baseURL: 'http://localhost:3000/api',
-        entitiesUri: '/entities', // todo: grab it from local api config
-        authEndpoint: '/token', // todo: grab it from local api config
-        revokeEndpoint: '/revoke', // todo: grab it from local api config
-        timeout: 15000
-      }, pick(localConfig.api || {}, ['entitiesUri', 'authEndpoint']))
+    if (process.env.$pleasure && process.env.$pleasure) {
+      localConfig = merge.all([{}, process.env.$pleasure, localConfig]);
     }
+
+    return merge.all([{
+      baseURL: 'http://localhost:3000/api',
+      entitiesUri: '/entities', // todo: grab it from local api config
+      authEndpoint: '/token', // todo: grab it from local api config
+      revokeEndpoint: '/revoke', // todo: grab it from local api config
+      timeout: 15000
+    }, config, pick(localConfig.api || {}, ['entitiesUri', 'authEndpoint'])])
   }
 
-  let config$1 = defaultConfig();
+  let config = defaultConfig();
 
   /**
    * Creates an axios instance able to handle API responses
@@ -79,7 +82,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    * @param {Number} timeout - Timeout in milliseconds
    * @return {Object} - axios instance
    */
-  function getDriver ({ baseURL = config$1.api.baseURL, timeout = config$1.api.timeout } = {}) {
+  function getDriver ({ baseURL = config.baseURL, timeout = config.timeout } = {}) {
     const driver = axios.create({
       timeout,
       baseURL,
@@ -119,24 +122,9 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    */
   var driver = getDriver();
 
-  let ui = defaultConfig();
+  let _config = defaultConfig();
 
-  console.log({ ui });
-
-  if (process.env.$pleasure) {
-    ui = process.env.$pleasure.ui;
-  }
-  console.log(`>>>`, { ui });
-
-  /*
-   todo: implement socket.io-client
-    extend EventEmitter with:
-    `on('update', entryUpdated => console.log(entryUpdated))` or pleasureClient.users.on('update', 'id')` or
-    `pleasureClient.users.on('create', entry => console.log(entry))` or
-    `pleasureClient.users.on('delete', 'id', entry => console.log(entry))` or
-    `pleasureClient.users.on('delete', entryDeleted => console.log(entryDeleted))`
-
-   */
+  console.log({ _config });
 
   class ReduxClient extends events.EventEmitter {
     constructor (apiURL) {
@@ -270,7 +258,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
 
   /**
    * Client for querying the API server.
-   * @name pleasure/PleasureClient
+   * @name PleasureClient
    *
    * @see {@link pleasureClient} for a singleton instance of this class.
    *
@@ -300,7 +288,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
      * @param {String} [options.accessToken] - Optional accessToken in case to start the driver with a session.
      * @param {String} [options.refreshToken] - Optional refreshToken in case to start the driver with a session.
      */
-    constructor ({ accessToken, refreshToken, driver = getDriver(), config = ui } = {}) {
+    constructor ({ accessToken, refreshToken, driver = getDriver(), config = _config } = {}) {
       const { baseURL } = driver.defaults;
       super(baseURL);
 
@@ -309,6 +297,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
       this._refreshToken = refreshToken;
       this._userProfile = null;
       this._cache = [];
+      console.log({ config });
       this.config = config;
 
       /**
@@ -561,7 +550,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
     async login (credentials, params = {}) {
       this._localLogout();
       const { accessToken, refreshToken } = await this.driver({
-        url: `${ this.config.api.authEndpoint }`,
+        url: `${ this.config.authEndpoint }`,
         method: 'post',
         data: credentials,
         params
@@ -584,7 +573,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
     async logout () {
       // todo: hit and endpoint that blacklists the session
       await this._driver({
-        url: `${ this.config.api.revokeEndpoint }`,
+        url: `${ this.config.revokeEndpoint }`,
         method: 'post'
       });
       return this._localLogout()
@@ -678,7 +667,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
      * @return {Object} - Pleasure Entity Schema
      */
     getEntities () {
-      return this.driver({ url: this.config.api.entitiesUri })
+      return this.driver({ url: this.config.entitiesUri })
     }
 
     /**
@@ -964,7 +953,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
   exports.ApiError = ApiError;
   exports.PleasureClient = PleasureClient;
   exports.apiDriver = driver;
-  exports.config = config$1;
+  exports.config = config;
   exports.default = pleasureClient;
   exports.defaultConfig = defaultConfig;
   exports.getDriver = getDriver;

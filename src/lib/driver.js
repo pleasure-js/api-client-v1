@@ -12,7 +12,7 @@ export let config = defaultConfig()
  * @param {Number} timeout - Timeout in milliseconds
  * @return {Object} - axios instance
  */
-export function getDriver ({ baseURL = config.api.baseURL, timeout = config.api.timeout } = {}) {
+export function getDriver ({ baseURL = config.baseURL, timeout = config.timeout } = {}) {
   const driver = axios.create({
     timeout,
     baseURL,

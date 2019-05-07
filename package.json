@@ -7,7 +7,8 @@
   "author": "Martin Rafael Gonzalez <tin@devtin.io>",
   "license": "MIT",
   "scripts": {
-    "build": "rollup -c rollup.config.js"
+    "build": "rollup -c rollup.config.js",
+    "build:live": "nodemon -w src --exec yarn build"
   },
   "dependencies": {
     "axios": "^0.18.0",
@@ -20,6 +21,7 @@
     "socket.io-client": "^2.2.0"
   },
   "devDependencies": {
+    "nodemon": "^1.19.0",
     "rollup": "^1.11.3",
     "rollup-plugin-babel-minify": "^8.0.0",
     "rollup-plugin-commonjs": "^9.3.4",
