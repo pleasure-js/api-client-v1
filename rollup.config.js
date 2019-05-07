@@ -1,6 +1,5 @@
 const { name, version, author, peerDependencies: external, dependencies: only } = require('./package.json')
 const minify = require('rollup-plugin-babel-minify')
-const vue = require('rollup-plugin-vue')
 const commonjs = require('rollup-plugin-commonjs')
 const nodeResolve = require('rollup-plugin-node-resolve')
 const json = require('rollup-plugin-json')
@@ -20,6 +19,7 @@ const getPlugins = ({ minified = false, bundle = false } = {}) => {
 
   if (bundle) {
     plugs.push(
+      builtins(),
       nodeResolve({
         jsnext: true,
         main: true

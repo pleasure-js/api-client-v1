@@ -961,5 +961,8 @@ class PleasureClient extends ReduxClient {
 
 const pleasureClient = new PleasureClient();
 
+exports.ApiError = ApiError;
 exports.PleasureClient = PleasureClient;
 exports.default = pleasureClient;
+exports.defaultConfig = defaultConfig;
+exports.getDriver = getDriver;
