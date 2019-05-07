@@ -4,7 +4,6 @@
   "version": "0.0.9",
   "main": "dist/pleasure-client.common.js",
   "module": "dist/pleasure-client.esm.js",
-  "browser": "dist/pleasure-client.min.js",
   "author": "Martin Rafael Gonzalez <tin@devtin.io>",
   "license": "MIT",
   "scripts": {
