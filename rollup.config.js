@@ -46,13 +46,11 @@ module.exports = [
     output: [
       {
         file: 'dist/pleasure-client.common.js',
-        name: 'PleasureClient',
         format: 'cjs',
         banner
       },
       {
         file: 'dist/pleasure-client.esm.js',
-        name: 'PleasureClient',
         format: 'esm',
         banner
       }
