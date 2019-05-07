@@ -19,7 +19,6 @@
     "qs": "^6.7.0"
   },
   "devDependencies": {
-    "pleasure": "devtin/pleasure",
     "rollup": "^1.11.3",
     "rollup-plugin-babel-minify": "^8.0.0",
     "rollup-plugin-commonjs": "^9.3.4",

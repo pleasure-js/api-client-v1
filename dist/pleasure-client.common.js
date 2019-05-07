@@ -9,7 +9,6 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var apiError = require('pleasure/src/api/lib/api-error');
 var pick = _interopDefault(require('lodash/pick'));
 var merge = _interopDefault(require('deepmerge'));
 var axios = _interopDefault(require('axios'));
@@ -25,6 +24,26 @@ var jwtDecode = _interopDefault(require('jwt-decode'));
 var events = require('events');
 var io = _interopDefault(require('socket.io-client'));
 var url = _interopDefault(require('url'));
+
+/**
+ * Used to throw errors returned by the API server.
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error|Error}
+ */
+class ApiError extends Error {
+  /**
+   *
+   * @param {String} error - Error name.
+   * @param {String} message
+   * @param {Number} [code=500] - Error number.
+   * @param data
+   */
+  constructor (error, message, code = 500, data) {
+    super(error);
+    this.message = message;
+    this.code = code;
+    this.data = data;
+  }
+}
 
 /**
  * @typedef {Object} ClientConfig
@@ -82,7 +101,7 @@ function getDriver ({ baseURL = ui.api.baseURL, timeout = ui.api.timeout } = {})
         return data
       }
 
-      throw new apiError.ApiError(error, message, statusCode, data)
+      throw new ApiError(error, message, statusCode, data)
     },
     err => {
       const { errors, error } = get(err, 'response.data', {});

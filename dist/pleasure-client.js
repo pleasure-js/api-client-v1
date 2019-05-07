@@ -3,7 +3,7 @@
  * (c) 2018-2019 Martin Rafael Gonzalez <tin@devtin.io>
  * Released under the MIT License.
  */
-var PleasureClient = (function (exports, http, https, url$1, assert, stream, tty, util$1, os, zlib, crypto, events, fs, child_process, net, tls, bufferutil, utf8Validate) {
+var pleasureClient = (function (exports, http, https, url$1, assert, stream, tty, util$1, os, zlib, crypto, events, fs, child_process, net, tls, bufferutil, utf8Validate) {
   'use strict';
 
   http = http && http.hasOwnProperty('default') ? http['default'] : http;

@@ -62,7 +62,7 @@ module.exports = [
     output: [
       {
         file: 'dist/pleasure-client.js',
-        name: 'PleasureClient',
+        name: 'pleasureClient',
         format: 'iife',
         banner
       }
@@ -74,7 +74,7 @@ module.exports = [
     output: [
       {
         file: 'dist/pleasure-client.min.js',
-        name: 'PleasureClient',
+        name: 'pleasureClient',
         format: 'iife',
         banner
       },

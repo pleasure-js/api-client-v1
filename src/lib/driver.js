@@ -1,4 +1,4 @@
-import { ApiError } from 'pleasure/src/api/lib/api-error'
+import { ApiError } from './api-error'
 import defaultConfig from './default-config.js'
 import axios from 'axios'
 import qs from 'qs'

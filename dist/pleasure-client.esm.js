@@ -3,7 +3,6 @@
  * (c) 2018-2019 Martin Rafael Gonzalez <tin@devtin.io>
  * Released under the MIT License.
  */
-import { ApiError } from 'pleasure/src/api/lib/api-error';
 import pick from 'lodash/pick';
 import merge from 'deepmerge';
 import axios from 'axios';
@@ -19,6 +18,26 @@ import jwtDecode from 'jwt-decode';
 import { EventEmitter } from 'events';
 import io from 'socket.io-client';
 import url from 'url';
+
+/**
+ * Used to throw errors returned by the API server.
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error|Error}
+ */
+class ApiError extends Error {
+  /**
+   *
+   * @param {String} error - Error name.
+   * @param {String} message
+   * @param {Number} [code=500] - Error number.
+   * @param data
+   */
+  constructor (error, message, code = 500, data) {
+    super(error);
+    this.message = message;
+    this.code = code;
+    this.data = data;
+  }
+}
 
 /**
  * @typedef {Object} ClientConfig
