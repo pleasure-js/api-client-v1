@@ -67,7 +67,7 @@ module.exports = [
         banner
       }
     ],
-    plugins: getPlugins({ bundle: true })
+    plugins: getPlugins()
   },
   {
     input: 'src/pleasure-client.js',
@@ -79,6 +79,6 @@ module.exports = [
         banner
       },
     ],
-    plugins: getPlugins({ bundle: true, minified: true })
+    plugins: getPlugins({ minified: true })
   },
 ]
