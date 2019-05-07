@@ -1,4 +1,4 @@
-import { getDriver } from './lib/driver.js'
+import apiDriver, { getDriver } from './lib/driver.js'
 import { ApiError } from './lib/api-error'
 import castArray from 'lodash/castArray'
 import kebabCase from 'lodash/kebabCase'
@@ -853,4 +853,4 @@ const pleasureClient = new PleasureClient()
 
 export default pleasureClient
 
-export { getDriver, defaultConfig, ApiError }
+export { getDriver, defaultConfig, ApiError, apiDriver }

@@ -19538,7 +19538,7 @@ var pleasureClient = (function (exports, bufferutil, utf8Validate) {
    * Instance of getDriver using default values.
    * @type getDriver
    */
-  getDriver();
+  var driver = getDriver();
 
   /**
    * Casts `value` as an array if it's not one.
@@ -40022,6 +40022,7 @@ var pleasureClient = (function (exports, bufferutil, utf8Validate) {
 
   exports.ApiError = ApiError;
   exports.PleasureClient = PleasureClient;
+  exports.apiDriver = driver;
   exports.default = pleasureClient;
   exports.defaultConfig = defaultConfig;
   exports.getDriver = getDriver;

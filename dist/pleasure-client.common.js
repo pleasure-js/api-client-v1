@@ -120,7 +120,7 @@ function getDriver ({ baseURL = ui.api.baseURL, timeout = ui.api.timeout } = {})
  * Instance of getDriver using default values.
  * @type getDriver
  */
-getDriver();
+var driver = getDriver();
 
 let ui$1 = defaultConfig();
 
@@ -963,6 +963,7 @@ const pleasureClient = new PleasureClient();
 
 exports.ApiError = ApiError;
 exports.PleasureClient = PleasureClient;
+exports.apiDriver = driver;
 exports.default = pleasureClient;
 exports.defaultConfig = defaultConfig;
 exports.getDriver = getDriver;

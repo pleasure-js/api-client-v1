@@ -114,7 +114,7 @@ function getDriver ({ baseURL = ui.api.baseURL, timeout = ui.api.timeout } = {})
  * Instance of getDriver using default values.
  * @type getDriver
  */
-getDriver();
+var driver = getDriver();
 
 let ui$1 = defaultConfig();
 
@@ -956,4 +956,4 @@ class PleasureClient extends ReduxClient {
 const pleasureClient = new PleasureClient();
 
 export default pleasureClient;
-export { ApiError, PleasureClient, defaultConfig, getDriver };
+export { ApiError, PleasureClient, driver as apiDriver, defaultConfig, getDriver };
