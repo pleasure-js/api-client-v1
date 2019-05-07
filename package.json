@@ -9,15 +9,17 @@
   "scripts": {
     "build": "rollup -c rollup.config.js"
   },
-  "devDependencies": {
+  "dependencies": {
     "axios": "^0.18.0",
     "bluebird": "^3.5.4",
     "deepmerge": "^3.2.0",
     "jwt-decode": "^2.2.0",
     "lodash": "^4.17.11",
     "object-hash": "^1.3.1",
+    "qs": "^6.7.0"
+  },
+  "devDependencies": {
     "pleasure": "devtin/pleasure",
-    "qs": "^6.7.0",
     "rollup": "^1.11.3",
     "rollup-plugin-babel-minify": "^8.0.0",
     "rollup-plugin-commonjs": "^9.3.4",
