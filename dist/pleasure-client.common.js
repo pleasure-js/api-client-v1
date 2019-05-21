@@ -1,5 +1,5 @@
 /*!
- * pleasure-client v0.0.9
+ * pleasure-client v1.0.0-beta
  * (c) 2018-2019 Martin Rafael Gonzalez <tin@devtin.io>
  * Released under the MIT License.
  */
@@ -128,7 +128,7 @@ var driver = getDriver();
 
 let _config = defaultConfig();
 
-console.log({ _config });
+let singleton;
 
 class ReduxClient extends events.EventEmitter {
   constructor (apiURL) {
@@ -155,6 +155,10 @@ class ReduxClient extends events.EventEmitter {
   }
 
   connect () {
+    if (process.server) {
+      return
+    }
+
     const auth = Object.assign({ forceNew: true, path: this._path }, this.token ? {
       transportOptions: {
         polling: {
@@ -539,7 +543,9 @@ class PleasureClient extends ReduxClient {
    *
    * @example
    *
-   * import { pleasureClient } from 'pleasure'
+   * import { PleasureClient } from 'pleasure'
+   *
+   * const pleasureClient = PleasureClient.instance()
    *
    * pleasureClient
    *   .login({ user: 'tin@devtin.io', password: 'mySuperStrongPassword123:)' })
@@ -931,6 +937,15 @@ class PleasureClient extends ReduxClient {
       })
     })
   }
+
+  static instance () {
+    if (singleton) {
+      return singleton
+    }
+
+    singleton = new PleasureClient();
+    return singleton
+  }
 }
 
 /**
@@ -940,7 +955,8 @@ class PleasureClient extends ReduxClient {
  *
  * @example
  *
- * import { pleasureClient } from 'pleasure'
+ * import { PleasureClient } from 'pleasure'
+ * const pleasureClient = PleasureClient.instance()
  *
  * pleasureClient
  *   .list('products')
@@ -952,12 +968,12 @@ class PleasureClient extends ReduxClient {
  *   })
  */
 
-const pleasureClient = new PleasureClient();
+const instance = PleasureClient.instance.bind(PleasureClient);
 
 exports.ApiError = ApiError;
 exports.PleasureClient = PleasureClient;
 exports.apiDriver = driver;
 exports.config = config;
-exports.default = pleasureClient;
 exports.defaultConfig = defaultConfig;
 exports.getDriver = getDriver;
+exports.instance = instance;

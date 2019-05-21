@@ -1,5 +1,5 @@
 /*!
- * pleasure-client v0.0.9
+ * pleasure-client v1.0.0-beta
  * (c) 2018-2019 Martin Rafael Gonzalez <tin@devtin.io>
  * Released under the MIT License.
  */
@@ -124,7 +124,7 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
 
   let _config = defaultConfig();
 
-  console.log({ _config });
+  let singleton;
 
   class ReduxClient extends events.EventEmitter {
     constructor (apiURL) {
@@ -151,6 +151,10 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
     }
 
     connect () {
+      if (process.server) {
+        return
+      }
+
       const auth = Object.assign({ forceNew: true, path: this._path }, this.token ? {
         transportOptions: {
           polling: {
@@ -535,7 +539,9 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
      *
      * @example
      *
-     * import { pleasureClient } from 'pleasure'
+     * import { PleasureClient } from 'pleasure'
+     *
+     * const pleasureClient = PleasureClient.instance()
      *
      * pleasureClient
      *   .login({ user: 'tin@devtin.io', password: 'mySuperStrongPassword123:)' })
@@ -927,6 +933,15 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
         })
       })
     }
+
+    static instance () {
+      if (singleton) {
+        return singleton
+      }
+
+      singleton = new PleasureClient();
+      return singleton
+    }
   }
 
   /**
@@ -936,7 +951,8 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    *
    * @example
    *
-   * import { pleasureClient } from 'pleasure'
+   * import { PleasureClient } from 'pleasure'
+   * const pleasureClient = PleasureClient.instance()
    *
    * pleasureClient
    *   .list('products')
@@ -948,15 +964,15 @@ var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray,
    *   })
    */
 
-  const pleasureClient = new PleasureClient();
+  const instance = PleasureClient.instance.bind(PleasureClient);
 
   exports.ApiError = ApiError;
   exports.PleasureClient = PleasureClient;
   exports.apiDriver = driver;
   exports.config = config;
-  exports.default = pleasureClient;
   exports.defaultConfig = defaultConfig;
   exports.getDriver = getDriver;
+  exports.instance = instance;
 
   return exports;
 

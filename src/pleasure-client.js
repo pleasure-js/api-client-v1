@@ -14,7 +14,7 @@ import url from 'url'
 
 let _config = defaultConfig()
 
-console.log({ _config })
+let singleton
 
 class ReduxClient extends EventEmitter {
   constructor (apiURL) {
@@ -41,6 +41,10 @@ class ReduxClient extends EventEmitter {
   }
 
   connect () {
+    if (process.server) {
+      return
+    }
+
     const auth = Object.assign({ forceNew: true, path: this._path }, this.token ? {
       transportOptions: {
         polling: {
@@ -425,7 +429,9 @@ export class PleasureClient extends ReduxClient {
    *
    * @example
    *
-   * import { pleasureClient } from 'pleasure'
+   * import { PleasureClient } from 'pleasure'
+   *
+   * const pleasureClient = PleasureClient.instance()
    *
    * pleasureClient
    *   .login({ user: 'tin@devtin.io', password: 'mySuperStrongPassword123:)' })
@@ -817,6 +823,15 @@ export class PleasureClient extends ReduxClient {
       })
     })
   }
+
+  static instance () {
+    if (singleton) {
+      return singleton
+    }
+
+    singleton = new PleasureClient()
+    return singleton
+  }
 }
 
 /**
@@ -826,7 +841,8 @@ export class PleasureClient extends ReduxClient {
  *
  * @example
  *
- * import { pleasureClient } from 'pleasure'
+ * import { PleasureClient } from 'pleasure'
+ * const pleasureClient = PleasureClient.instance()
  *
  * pleasureClient
  *   .list('products')
@@ -838,8 +854,6 @@ export class PleasureClient extends ReduxClient {
  *   })
  */
 
-const pleasureClient = new PleasureClient()
+const instance = PleasureClient.instance.bind(PleasureClient)
 
-export default pleasureClient
-
-export { getDriver, defaultConfig, ApiError, apiDriver, config }
+export { getDriver, defaultConfig, ApiError, apiDriver, config, instance }

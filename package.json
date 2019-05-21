@@ -1,7 +1,7 @@
 {
   "name": "pleasure-client",
   "description": "API client for pleasure.",
-  "version": "0.0.9",
+  "version": "1.0.0-beta",
   "main": "dist/pleasure-client.common.js",
   "module": "dist/pleasure-client.esm.js",
   "author": "Martin Rafael Gonzalez <tin@devtin.io>",
