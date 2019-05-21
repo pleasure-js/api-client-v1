@@ -1,5 +1,5 @@
 {
-  "name": "pleasure-client",
+  "name": "pleasure-api-client",
   "description": "API client for pleasure.",
   "version": "1.0.0-beta",
   "main": "dist/pleasure-client.common.js",
