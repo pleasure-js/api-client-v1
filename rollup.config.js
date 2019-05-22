@@ -1,4 +1,4 @@
-const { name, version, author, peerDependencies: external, dependencies: only } = require('./package.json')
+const { name: packageName, version, author, peerDependencies: external, dependencies: only } = require('./package.json')
 const minify = require('rollup-plugin-babel-minify')
 const commonjs = require('rollup-plugin-commonjs')
 const nodeResolve = require('rollup-plugin-node-resolve')
@@ -7,7 +7,7 @@ const builtins = require('rollup-plugin-node-builtins')
 const merge = require('deepmerge')
 
 const banner = `/*!
- * ${ name } v${ version }
+ * ${ packageName } v${ version }
  * (c) 2018-${ new Date().getFullYear() } ${ author }
  * Released under the MIT License.
  */`
@@ -39,6 +39,7 @@ const getPlugins = ({ minified = false, bundle = false } = {}) => {
 }
 
 const plugins = getPlugins()
+const name = 'PleasureApiClient'
 
 module.exports = [
   {
@@ -62,7 +63,7 @@ module.exports = [
     output: [
       {
         file: 'dist/pleasure-api-client.js',
-        name: 'pleasureClient',
+        name,
         format: 'iife',
         banner
       }
@@ -74,7 +75,7 @@ module.exports = [
     output: [
       {
         file: 'dist/pleasure-api-client.min.js',
-        name: 'pleasureClient',
+        name,
         format: 'iife',
         banner
       },

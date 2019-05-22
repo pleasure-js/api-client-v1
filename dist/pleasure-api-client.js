@@ -3,7 +3,7 @@
  * (c) 2018-2019 Martin Rafael Gonzalez <tin@devtin.io>
  * Released under the MIT License.
  */
-var pleasureClient = (function (exports, pick, merge, axios, qs, get, castArray, kebabCase, forEach, mapValues, objectHash, Promise, jwtDecode, events, io, url) {
+var PleasureApiClient = (function (exports, pick, merge, axios, qs, get, castArray, kebabCase, forEach, mapValues, objectHash, Promise, jwtDecode, events, io, url) {
   'use strict';
 
   pick = pick && pick.hasOwnProperty('default') ? pick['default'] : pick;
