@@ -42,15 +42,15 @@ const plugins = getPlugins()
 
 module.exports = [
   {
-    input: 'src/pleasure-client.js',
+    input: 'src/pleasure-api-client.js',
     output: [
       {
-        file: 'dist/pleasure-client.common.js',
+        file: 'dist/pleasure-api-client.common.js',
         format: 'cjs',
         banner
       },
       {
-        file: 'dist/pleasure-client.esm.js',
+        file: 'dist/pleasure-api-client.esm.js',
         format: 'esm',
         banner
       }
@@ -58,10 +58,10 @@ module.exports = [
     plugins
   },
   {
-    input: 'src/pleasure-client.js',
+    input: 'src/pleasure-api-client.js',
     output: [
       {
-        file: 'dist/pleasure-client.js',
+        file: 'dist/pleasure-api-client.js',
         name: 'pleasureClient',
         format: 'iife',
         banner
@@ -70,10 +70,10 @@ module.exports = [
     plugins: getPlugins()
   },
   {
-    input: 'src/pleasure-client.js',
+    input: 'src/pleasure-api-client.js',
     output: [
       {
-        file: 'dist/pleasure-client.min.js',
+        file: 'dist/pleasure-api-client.min.js',
         name: 'pleasureClient',
         format: 'iife',
         banner

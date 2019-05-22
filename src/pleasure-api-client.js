@@ -100,7 +100,7 @@ class ReduxClient extends EventEmitter {
       if (
         typeof o === 'object'
       ) {
-        return PleasureClient.queryParamEncode(o)
+        return PleasureApiClient.queryParamEncode(o)
       }
 
       return o
@@ -152,7 +152,7 @@ class ReduxClient extends EventEmitter {
 
 /**
  * Client for querying the API server.
- * @name PleasureClient
+ * @name PleasureApiClient
  *
  * @see {@link pleasureClient} for a singleton instance of this class.
  *
@@ -171,7 +171,7 @@ class ReduxClient extends EventEmitter {
  *   })
  * ```
  */
-export class PleasureClient extends ReduxClient {
+export class PleasureApiClient extends ReduxClient {
   /**
    * Initializes a client driver for the API server.
    * @constructor
@@ -191,7 +191,6 @@ export class PleasureClient extends ReduxClient {
     this._refreshToken = refreshToken
     this._userProfile = null
     this._cache = []
-    console.log({ config })
     this.config = config
 
     /**
@@ -464,7 +463,7 @@ export class PleasureClient extends ReduxClient {
   }
 
   /**
-   * Cleans client credentials obtained by {@link PleasureClient#login}.
+   * Cleans client credentials obtained by {@link PleasureApiClient#login}.
    */
   async logout () {
     // todo: hit and endpoint that blacklists the session
@@ -737,7 +736,7 @@ export class PleasureClient extends ReduxClient {
     return this.driver({
       url,
       method: 'delete',
-      params: PleasureClient.queryParamEncode(params)
+      params: PleasureApiClient.queryParamEncode(params)
     })
   }
 
@@ -829,14 +828,14 @@ export class PleasureClient extends ReduxClient {
       return singleton
     }
 
-    singleton = new PleasureClient()
+    singleton = new PleasureApiClient()
     return singleton
   }
 }
 
 /**
- * Singleton instance of {@link PleasureClient}.
- * @type {PleasureClient}
+ * Singleton instance of {@link PleasureApiClient}.
+ * @type {PleasureApiClient}
  * @instance pleasureClient
  *
  * @example
@@ -854,6 +853,6 @@ export class PleasureClient extends ReduxClient {
  *   })
  */
 
-const instance = PleasureClient.instance.bind(PleasureClient)
+const instance = PleasureApiClient.instance.bind(PleasureApiClient)
 
 export { getDriver, defaultConfig, ApiError, apiDriver, config, instance }
