@@ -3,8 +3,8 @@
  * (c) 2018-2019 Martin Rafael Gonzalez <tin@devtin.io>
  * Released under the MIT License.
  */
-import pick from 'lodash/pick';
-import merge from 'deepmerge';
+import { getConfig } from 'pleasure-api';
+import { omit } from 'lodash';
 import axios from 'axios';
 import qs from 'qs';
 import get from 'lodash/get';
@@ -52,24 +52,8 @@ class ApiError extends Error {
  * @ignore
  * @exports {ClientConfig}
  */
-function defaultConfig (localConfig = {}) {
-  let config = {};
-
-  if (process.env.$pleasure && process.env.$pleasure.pleasureClient) {
-    config = process.env.$pleasure.pleasureClient;
-  }
-
-  if (process.env.$pleasure && process.env.$pleasure) {
-    localConfig = merge.all([{}, process.env.$pleasure, localConfig]);
-  }
-
-  return merge.all([{
-    baseURL: 'http://localhost:3000/api',
-    entitiesUri: '/entities', // todo: grab it from local api config
-    authEndpoint: '/token', // todo: grab it from local api config
-    revokeEndpoint: '/revoke', // todo: grab it from local api config
-    timeout: 15000
-  }, config, pick(localConfig.api || {}, ['entitiesUri', 'authEndpoint'])])
+function defaultConfig () {
+  return omit(getConfig(), 'mongodb')
 }
 
 let config = defaultConfig();

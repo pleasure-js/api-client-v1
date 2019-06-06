@@ -1,5 +1,6 @@
-import pick from 'lodash/pick'
-import merge from 'deepmerge'
+import { getConfig } from 'pleasure-api'
+import { omit } from 'lodash'
+
 /**
  * @typedef {Object} ClientConfig
  * @property {Object} api - PleasureClient related configuration.
@@ -13,22 +14,6 @@ import merge from 'deepmerge'
  * @ignore
  * @exports {ClientConfig}
  */
-export default function (localConfig = {}) {
-  let config = {}
-
-  if (process.env.$pleasure && process.env.$pleasure.pleasureClient) {
-    config = process.env.$pleasure.pleasureClient
-  }
-
-  if (process.env.$pleasure && process.env.$pleasure) {
-    localConfig = merge.all([{}, process.env.$pleasure, localConfig])
-  }
-
-  return merge.all([{
-    baseURL: 'http://localhost:3000/api',
-    entitiesUri: '/entities', // todo: grab it from local api config
-    authEndpoint: '/token', // todo: grab it from local api config
-    revokeEndpoint: '/revoke', // todo: grab it from local api config
-    timeout: 15000
-  }, config, pick(localConfig.api || {}, ['entitiesUri', 'authEndpoint'])])
+export default function () {
+  return omit(getConfig(), 'mongodb')
 }

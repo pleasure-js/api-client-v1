@@ -3,11 +3,9 @@
  * (c) 2018-2019 Martin Rafael Gonzalez <tin@devtin.io>
  * Released under the MIT License.
  */
-var PleasureApiClient = (function (exports, pick, merge, axios, qs, get, castArray, kebabCase, forEach, mapValues, objectHash, Promise, jwtDecode, events, io, url) {
+var PleasureApiClient = (function (exports, pleasureApi, lodash, axios, qs, get, castArray, kebabCase, forEach, mapValues, objectHash, Promise, jwtDecode, events, io, url) {
   'use strict';
 
-  pick = pick && pick.hasOwnProperty('default') ? pick['default'] : pick;
-  merge = merge && merge.hasOwnProperty('default') ? merge['default'] : merge;
   axios = axios && axios.hasOwnProperty('default') ? axios['default'] : axios;
   qs = qs && qs.hasOwnProperty('default') ? qs['default'] : qs;
   get = get && get.hasOwnProperty('default') ? get['default'] : get;
@@ -54,24 +52,8 @@ var PleasureApiClient = (function (exports, pick, merge, axios, qs, get, castArr
    * @ignore
    * @exports {ClientConfig}
    */
-  function defaultConfig (localConfig = {}) {
-    let config = {};
-
-    if (process.env.$pleasure && process.env.$pleasure.pleasureClient) {
-      config = process.env.$pleasure.pleasureClient;
-    }
-
-    if (process.env.$pleasure && process.env.$pleasure) {
-      localConfig = merge.all([{}, process.env.$pleasure, localConfig]);
-    }
-
-    return merge.all([{
-      baseURL: 'http://localhost:3000/api',
-      entitiesUri: '/entities', // todo: grab it from local api config
-      authEndpoint: '/token', // todo: grab it from local api config
-      revokeEndpoint: '/revoke', // todo: grab it from local api config
-      timeout: 15000
-    }, config, pick(localConfig.api || {}, ['entitiesUri', 'authEndpoint'])])
+  function defaultConfig () {
+    return lodash.omit(pleasureApi.getConfig(), 'mongodb')
   }
 
   let config = defaultConfig();
@@ -975,4 +957,4 @@ var PleasureApiClient = (function (exports, pick, merge, axios, qs, get, castArr
 
   return exports;
 
-}({}, pick, merge, axios, qs, get, castArray, kebabCase, forEach, mapValues, objectHash, Promise, jwtDecode, events, io, url));
+}({}, pleasureApi, lodash, axios, qs, get, castArray, kebabCase, forEach, mapValues, objectHash, Promise, jwtDecode, events, io, url));
