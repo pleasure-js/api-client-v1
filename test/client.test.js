@@ -1,11 +1,18 @@
 import test from 'ava'
 import { expect } from 'chai'
-import { PleasureApiClient } from 'pleasure-api-client' // pleasure
-import './utils/web-server.js'
+import { PleasureApiClient, getConfig } from '../' // pleasure-api-client
+import 'pleasure-api/test/utils/web-server.js'
 import 'pleasure-core-dev-tools/test/clean-db-per-test.js'
 import { pick } from 'lodash'
 
-const pleasureClient = PleasureApiClient.instance()
+let pleasureClient
+
+test.before(() => {
+  pleasureClient = PleasureApiClient.instance()
+  pleasureClient.on('error', error => {
+    console.error(error)
+  })
+})
 
 test.beforeEach(async t => {
   return pleasureClient.logout()
