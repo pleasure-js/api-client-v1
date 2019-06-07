@@ -4,7 +4,11 @@ const commonjs = require('rollup-plugin-commonjs')
 const nodeResolve = require('rollup-plugin-node-resolve')
 const json = require('rollup-plugin-json')
 const builtins = require('rollup-plugin-node-builtins')
+const replace = require('rollup-plugin-replace')
 const merge = require('deepmerge')
+const { getConfig: getApiConfig, getPlugins: getApiPlugins } = require('pleasure-api')
+const { port, entitiesUri, prefix } = getApiConfig()
+const { pluginsConfig: { jwt: { authEndpoint, revokeEndpoint } } } = getApiPlugins()
 
 const banner = `/*!
  * ${ packageName } v${ version }
@@ -14,6 +18,14 @@ const banner = `/*!
 
 const getPlugins = ({ minified = false, bundle = false } = {}) => {
   const plugs = [
+    replace({
+      VERSION: version,
+      DEF_API_PORT: JSON.stringify(port),
+      DEF_API_PREFIX: JSON.stringify(prefix),
+      DEF_API_AUTH_ENDPOINT: JSON.stringify(authEndpoint),
+      DEF_API_REVOKE_ENDPOINT: JSON.stringify(revokeEndpoint),
+      DEF_API_ENTITIES_URI: JSON.stringify(entitiesUri)
+    }),
     json()
   ]
 
