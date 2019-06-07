@@ -52,7 +52,7 @@ var PleasureApiClient = (function (exports, axios, qs, get, castArray, kebabCase
    */
 
   function getConfig () {
-    const appURL = (process.server ? process.env.PLEASURE_CLIENT_APP_SERVER_URL : process.env.PLEASURE_CLIENT_APP_URL) || `http://localhost:${ 3000 }`;
+    const appURL = (process.server && process.env.PLEASURE_MODE === '3-tier' ? process.env.PLEASURE_CLIENT_APP_SERVER_URL : process.env.PLEASURE_CLIENT_APP_URL) || `http://localhost:${ 3000 }`;
     const apiURL = `${ appURL }${ "/api" }`;
     return {
       appURL,

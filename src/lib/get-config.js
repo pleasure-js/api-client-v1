@@ -10,7 +10,7 @@
  */
 
 export function getConfig () {
-  const appURL = (process.server ? process.env.PLEASURE_CLIENT_APP_SERVER_URL : process.env.PLEASURE_CLIENT_APP_URL) || `http://localhost:${ DEF_API_PORT }`
+  const appURL = (process.server && process.env.PLEASURE_MODE === '3-tier' ? process.env.PLEASURE_CLIENT_APP_SERVER_URL : process.env.PLEASURE_CLIENT_APP_URL) || `http://localhost:${ DEF_API_PORT }`
   const apiURL = `${ appURL }${ DEF_API_PREFIX }`
   return {
     appURL,
