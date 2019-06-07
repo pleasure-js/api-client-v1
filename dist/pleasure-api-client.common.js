@@ -9,8 +9,6 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var pleasureApi = require('pleasure-api');
-var lodash = require('lodash');
 var axios = _interopDefault(require('axios'));
 var qs = _interopDefault(require('qs'));
 var get = _interopDefault(require('lodash/get'));
@@ -22,6 +20,7 @@ var objectHash = _interopDefault(require('object-hash'));
 var Promise = _interopDefault(require('bluebird'));
 var jwtDecode = _interopDefault(require('jwt-decode'));
 var events = require('events');
+var merge = _interopDefault(require('deepmerge'));
 var io = _interopDefault(require('socket.io-client'));
 var url = _interopDefault(require('url'));
 
@@ -46,39 +45,46 @@ class ApiError extends Error {
 }
 
 /**
- * @typedef {Object} ClientConfig
- * @property {Object} api - PleasureClient related configuration.
- * @property {String} [baseURL=http://localhost:3000] - axios baseURL.
+ * @typedef {Object} ApiClientConfig
+ * @property {Object} api - PleasureApi related configuration.
+ * @property {String} [appURL=http://localhost:3000] - URL to the APP
+ * @property {String} [apiURL=http://localhost:3000/api] - URL to the API server
  * @property {String} [entitiesUri=/entities] - endpoint where to access the entities schema.
  * @property {String} [authEndpoint=/token] - endpoint where to exchange credentials for accessToken / refreshToken.
+ * @property {String} [revokeEndpoint=/revoke] - endpoint where to exchange credentials for accessToken / refreshToken.
  * @property {Number} [timeout=15000] - axios timeout in ms.
  */
 
-/**
- * @ignore
- * @exports {ClientConfig}
- */
-function defaultConfig () {
-  return lodash.omit(pleasureApi.getConfig(), 'mongodb')
+function getConfig () {
+  const appURL = (process.server ? process.env.PLEASURE_CLIENT_APP_SERVER_URL : process.env.PLEASURE_CLIENT_APP_URL) || `http://localhost:${ 3000 }`;
+  const apiURL = `${ appURL }${ "/api" }`;
+  return {
+    appURL,
+    apiURL: process.env.PLEASURE_CLIENT_API_URL || apiURL,
+    entitiesUri: process.env.PLEASURE_CLIENT_ENTITIES_URI || "/entities",
+    authEndpoint: process.env.PLEASURE_CLIENT_AUTH_ENDPOINT || "/token",
+    revokeEndpoint: process.env.PLEASURE_CLIENT_REVOKE_ENDPOINT || "/revoke",
+    timeout: 15000
+  }
 }
 
-let config = defaultConfig();
+let config = getConfig();
 
 /**
  * Creates an axios instance able to handle API responses
- * @param {String} baseURL - URL of the API
+ * @param {String} apiURL - URL of the API
  * @param {Number} timeout - Timeout in milliseconds
  * @return {Object} - axios instance
  */
-function getDriver ({ baseURL = config.baseURL, timeout = config.timeout } = {}) {
+function getDriver ({ apiURL = config.apiURL, timeout = config.timeout } = {}) {
   const driver = axios.create({
     timeout,
-    baseURL,
+    baseURL: apiURL,
     paramsSerializer (params) {
       return qs.stringify(params, { arrayFormat: 'brackets' })
     },
     headers: {
-      'X-Client': 'pleasure'
+      'X-Pleasure-Client': "1.0.0-beta"
     }
   });
 
@@ -95,7 +101,11 @@ function getDriver ({ baseURL = config.baseURL, timeout = config.timeout } = {})
       const { errors, error } = get(err, 'response.data', {});
 
       if (process.env.API_ERROR) {
-        console.log(`[api:${ err.config.method }(${ err.response.status }/${ err.response.statusText }) => ${ err.config.url }] ${ JSON.stringify(err.response.data) }`);
+        if (err && err.response) {
+          console.log(`[api:${ err.config.method }(${ err.response.status }/${ err.response.statusText }) => ${ err.config.url }] ${ JSON.stringify(err.response.data) }`);
+        } else {
+          console.log(`[api:`, err);
+        }
       }
 
       throw new Error(error || 'Unknown error')
@@ -110,18 +120,31 @@ function getDriver ({ baseURL = config.baseURL, timeout = config.timeout } = {})
  */
 var driver = getDriver();
 
-let _config = defaultConfig();
+let _config = getConfig();
 
 let singleton;
 
+const defaultReduxOptions = {
+  autoConnect: process.server ? false : true
+};
+
 class ReduxClient extends events.EventEmitter {
-  constructor (apiURL) {
+  /**
+   *
+   * @param {String} apiURL - URL to the API server
+   * @param {Object} options
+   * @param {Boolean} [options.autoConnect=true] - Whether to auto-connect to socket.io at init or not.
+   */
+  constructor (apiURL, options = {}) {
     super();
+    options = merge.all([options, defaultReduxOptions, options]);
     const { protocol, host, pathname } = url.parse(apiURL);
+    this._options = options;
     this._token = null;
     this._isConnected = false;
     this._host = `${ protocol }//${ host }`;
     this._path = `${ pathname }-socket`;
+
     this._socket = null;
 
     this._binds = {
@@ -135,14 +158,13 @@ class ReduxClient extends events.EventEmitter {
         this.emit(ev, payload);
       }
     };
-    this.connect();
+
+    if (this._options.autoConnect) {
+      this.connect();
+    }
   }
 
   connect () {
-    if (process.server) {
-      return
-    }
-
     const auth = Object.assign({ forceNew: true, path: this._path }, this.token ? {
       transportOptions: {
         polling: {
@@ -260,7 +282,7 @@ class ReduxClient extends events.EventEmitter {
  * // import { PleasureClient, getDriver } from 'pleasure'
  * // const { PleasureClient, getDriver } = require('pleasure')
  *
- * const myPleasureClient = new PleasureClient({ driver: getDriver({ baseURL: 'http://my-api-url', timeout: 3000 }) })
+ * const myPleasureClient = new PleasureClient({ driver: getDriver({ appURL: 'http://my-api-url', timeout: 3000 }) })
  *
  * myPleasureClient
  *   .list('entity')
@@ -276,13 +298,14 @@ class PleasureApiClient extends ReduxClient {
    *
    * @param {Object} options - Options
    * @param {Object} [options.driver] - Driver to issue ajax requests to the API server. Defaults to {@link getDriver}.
-   * @param {ClientConfig} [options.config] - Optional object to override local configuration. See {@link ClientConfig}.
+   * @param {ApiClientConfig} [options.config] - Optional object to override local configuration. See {@link ClientConfig}.
    * @param {String} [options.accessToken] - Optional accessToken in case to start the driver with a session.
    * @param {String} [options.refreshToken] - Optional refreshToken in case to start the driver with a session.
+   * @param {Object} [options.reduxOptions] - Redux options. See {@link ReduxClient}.
    */
-  constructor ({ accessToken, refreshToken, driver = getDriver(), config = _config } = {}) {
+  constructor ({ accessToken, refreshToken, driver = getDriver(), config = _config, reduxOptions = {} } = {}) {
     const { baseURL } = driver.defaults;
-    super(baseURL);
+    super(baseURL, reduxOptions);
 
     this._driver = driver;
     this._accessToken = accessToken;
@@ -921,12 +944,15 @@ class PleasureApiClient extends ReduxClient {
     })
   }
 
-  static instance () {
+  static instance (opts) {
     if (singleton) {
+      if (opts) {
+        throw new Error(`Opts not accepted since singleton instance is already initialized.`)
+      }
       return singleton
     }
 
-    singleton = new PleasureApiClient();
+    singleton = new PleasureApiClient(opts);
     return singleton
   }
 }
@@ -957,6 +983,7 @@ exports.ApiError = ApiError;
 exports.PleasureApiClient = PleasureApiClient;
 exports.apiDriver = driver;
 exports.config = config;
-exports.defaultConfig = defaultConfig;
+exports.defaultReduxOptions = defaultReduxOptions;
+exports.getConfig = getConfig;
 exports.getDriver = getDriver;
 exports.instance = instance;
