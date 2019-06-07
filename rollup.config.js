@@ -19,7 +19,7 @@ const banner = `/*!
 const getPlugins = ({ minified = false, bundle = false } = {}) => {
   const plugs = [
     replace({
-      VERSION: version,
+      VERSION: JSON.stringify(version),
       DEF_API_PORT: JSON.stringify(port),
       DEF_API_PREFIX: JSON.stringify(prefix),
       DEF_API_AUTH_ENDPOINT: JSON.stringify(authEndpoint),

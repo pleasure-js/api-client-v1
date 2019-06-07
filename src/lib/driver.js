@@ -1,26 +1,26 @@
 import { ApiError } from './api-error'
-import defaultConfig from './default-config.js'
+import { getConfig } from './get-config.js'
 import axios from 'axios'
 import qs from 'qs'
 import get from 'lodash/get'
 
-export let config = defaultConfig()
+export let config = getConfig()
 
 /**
  * Creates an axios instance able to handle API responses
- * @param {String} baseURL - URL of the API
+ * @param {String} apiURL - URL of the API
  * @param {Number} timeout - Timeout in milliseconds
  * @return {Object} - axios instance
  */
-export function getDriver ({ baseURL = config.baseURL, timeout = config.timeout } = {}) {
+export function getDriver ({ apiURL = config.apiURL, timeout = config.timeout } = {}) {
   const driver = axios.create({
     timeout,
-    baseURL,
+    baseURL: apiURL,
     paramsSerializer (params) {
       return qs.stringify(params, { arrayFormat: 'brackets' })
     },
     headers: {
-      'X-Client': 'pleasure'
+      'X-Pleasure-Client': VERSION
     }
   })
 
@@ -37,7 +37,11 @@ export function getDriver ({ baseURL = config.baseURL, timeout = config.timeout 
       const { errors, error } = get(err, 'response.data', {})
 
       if (process.env.API_ERROR) {
-        console.log(`[api:${ err.config.method }(${ err.response.status }/${ err.response.statusText }) => ${ err.config.url }] ${ JSON.stringify(err.response.data) }`)
+        if (err && err.response) {
+          console.log(`[api:${ err.config.method }(${ err.response.status }/${ err.response.statusText }) => ${ err.config.url }] ${ JSON.stringify(err.response.data) }`)
+        } else {
+          console.log(`[api:`, err)
+        }
       }
 
       throw new Error(error || 'Unknown error')

@@ -8,22 +8,36 @@ import objectHash from 'object-hash'
 import Promise from 'bluebird'
 import jwtDecode from 'jwt-decode'
 import { EventEmitter } from 'events'
-import defaultConfig from './lib/default-config.js'
+import { getConfig } from './lib/get-config.js'
+import merge from 'deepmerge'
 import io from 'socket.io-client'
 import url from 'url'
 
-let _config = defaultConfig()
+let _config = getConfig()
 
 let singleton
 
+export const defaultReduxOptions = {
+  autoConnect: process.server ? false : true
+}
+
 class ReduxClient extends EventEmitter {
-  constructor (apiURL) {
+  /**
+   *
+   * @param {String} apiURL - URL to the API server
+   * @param {Object} options
+   * @param {Boolean} [options.autoConnect=true] - Whether to auto-connect to socket.io at init or not.
+   */
+  constructor (apiURL, options = {}) {
     super()
+    options = merge.all([options, defaultReduxOptions, options])
     const { protocol, host, pathname } = url.parse(apiURL)
+    this._options = options
     this._token = null
     this._isConnected = false
     this._host = `${ protocol }//${ host }`
     this._path = `${ pathname }-socket`
+
     this._socket = null
 
     this._binds = {
@@ -37,14 +51,13 @@ class ReduxClient extends EventEmitter {
         this.emit(ev, payload)
       }
     }
-    this.connect()
+
+    if (this._options.autoConnect) {
+      this.connect()
+    }
   }
 
   connect () {
-    if (process.server) {
-      return
-    }
-
     const auth = Object.assign({ forceNew: true, path: this._path }, this.token ? {
       transportOptions: {
         polling: {
@@ -162,7 +175,7 @@ class ReduxClient extends EventEmitter {
  * // import { PleasureClient, getDriver } from 'pleasure'
  * // const { PleasureClient, getDriver } = require('pleasure')
  *
- * const myPleasureClient = new PleasureClient({ driver: getDriver({ baseURL: 'http://my-api-url', timeout: 3000 }) })
+ * const myPleasureClient = new PleasureClient({ driver: getDriver({ appURL: 'http://my-api-url', timeout: 3000 }) })
  *
  * myPleasureClient
  *   .list('entity')
@@ -178,13 +191,14 @@ export class PleasureApiClient extends ReduxClient {
    *
    * @param {Object} options - Options
    * @param {Object} [options.driver] - Driver to issue ajax requests to the API server. Defaults to {@link getDriver}.
-   * @param {ClientConfig} [options.config] - Optional object to override local configuration. See {@link ClientConfig}.
+   * @param {ApiClientConfig} [options.config] - Optional object to override local configuration. See {@link ClientConfig}.
    * @param {String} [options.accessToken] - Optional accessToken in case to start the driver with a session.
    * @param {String} [options.refreshToken] - Optional refreshToken in case to start the driver with a session.
+   * @param {Object} [options.reduxOptions] - Redux options. See {@link ReduxClient}.
    */
-  constructor ({ accessToken, refreshToken, driver = getDriver(), config = _config } = {}) {
+  constructor ({ accessToken, refreshToken, driver = getDriver(), config = _config, reduxOptions = {} } = {}) {
     const { baseURL } = driver.defaults
-    super(baseURL)
+    super(baseURL, reduxOptions)
 
     this._driver = driver
     this._accessToken = accessToken
@@ -823,12 +837,15 @@ export class PleasureApiClient extends ReduxClient {
     })
   }
 
-  static instance () {
+  static instance (opts) {
     if (singleton) {
+      if (opts) {
+        throw new Error(`Opts not accepted since singleton instance is already initialized.`)
+      }
       return singleton
     }
 
-    singleton = new PleasureApiClient()
+    singleton = new PleasureApiClient(opts)
     return singleton
   }
 }
@@ -855,4 +872,4 @@ export class PleasureApiClient extends ReduxClient {
 
 const instance = PleasureApiClient.instance.bind(PleasureApiClient)
 
-export { getDriver, defaultConfig, ApiError, apiDriver, config, instance }
+export { getConfig, getDriver, ApiError, apiDriver, config, instance }
