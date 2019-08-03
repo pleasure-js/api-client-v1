@@ -35,8 +35,11 @@ class ReduxClient extends EventEmitter {
     this._options = options
     this._token = null
     this._isConnected = false
+    this._isConnecting = false
+    this._connectedAuth = null
     this._host = `${ protocol }//${ host }`
     this._path = `${ pathname }-socket`
+    this._socketId = null
 
     this._socket = null
 
@@ -58,6 +61,14 @@ class ReduxClient extends EventEmitter {
   }
 
   connect () {
+    if (this._connectedAuth === this.token && (this._isConnected || this._isConnecting)) {
+      return
+    }
+
+    this._isConnecting = true
+    this._isConnected = false
+    this._connectedAuth = this.token
+
     const auth = Object.assign({ forceNew: true, path: this._path }, this.token ? {
       transportOptions: {
         polling: {
@@ -69,12 +80,39 @@ class ReduxClient extends EventEmitter {
     } : {})
 
     if (this._socket) {
+      // todo: add debug option
+      // this._socketId && console.log(`disconnecting from ${ this._socketId }`)
       this._unwireSocket()
-      this._socket.disconnect()
+      this._socket.disconnect(true)
     }
 
-    this._socket = io(this._host, auth)
-    this._socket.onevent = ReduxClient._onEvent(this._socket.onevent)
+    // todo: add debug option
+    // console.log(`connecting ${ this.token ? 'with' : 'without' } credentials`)
+    const theSocket = io(this._host, auth)
+
+    // todo: add debug option
+    /*theSocket.on('connect', () => {
+      if (this._socket === theSocket) {
+        this._socketId = theSocket.id
+        console.log(`pleasure-api-client connected with id ${ theSocket.id }`)
+      } else {
+        console.log(`BEWARE! pleasure-api-client connected with id ${ theSocket.id } but not the main driver`)
+      }
+    })*/
+
+    // todo: add debug option
+    /*theSocket.on('disconnect', (reason) => {
+      console.log(`pleasure-api-client disconnected due to ${ reason }`)
+    })*/
+
+    // todo: add debug option
+    /*theSocket.on('reconnecting', (attemptNumber) => {
+      console.log(`pleasure-api-client reconnecting attempt # ${ attemptNumber }`)
+    })*/
+
+    theSocket.onevent = ReduxClient._onEvent(theSocket.onevent)
+
+    this._socket = theSocket
     this._wireSocket()
   }
 
@@ -128,6 +166,7 @@ class ReduxClient extends EventEmitter {
 
   _unwireSocket () {
     this._wiring(Object.keys(this._binds), false)
+    this._socket.removeAllListeners()
   }
 
   _wireSocket () {
@@ -139,17 +178,27 @@ class ReduxClient extends EventEmitter {
   }
 
   _error (...args) {
+    this._isConnecting = false
     this.emit('error', ...args)
   }
 
   _connect () {
+    // todo: add debug option
+    // console.log(`connected ${ this._socket.id }`)
     this._isConnected = true
+    this._isConnecting = false
     this.emit('connect')
   }
 
   _disconnect (err) {
+    // todo: add debug option
+    // console.log(`disconnected ${ this._socket.id }`)
     this._isConnected = false
     this.emit('disconnect')
+  }
+
+  get socket () {
+    return this._socket
   }
 
   get token () {
@@ -196,7 +245,10 @@ export class PleasureApiClient extends ReduxClient {
    * @param {String} [options.refreshToken] - Optional refreshToken in case to start the driver with a session.
    * @param {Object} [options.reduxOptions] - Redux options. See {@link ReduxClient}.
    */
-  constructor ({ accessToken, refreshToken, driver = getDriver(), config = _config, reduxOptions = {} } = {}) {
+  constructor (options) {
+    const { accessToken, refreshToken, driver = getDriver(), config = _config, reduxOptions = {} } = options || {}
+    // todo: add debug option
+    // console.log(`initializing pleasure-api-client`, { reduxOptions })
     const { baseURL } = driver.defaults
     super(baseURL, reduxOptions)
 
@@ -838,6 +890,8 @@ export class PleasureApiClient extends ReduxClient {
   }
 
   static instance (opts) {
+    // todo: add debug option
+    // console.log(`pleasure-client-instance`, { opts })
     if (singleton) {
       if (opts) {
         throw new Error(`Opts not accepted since singleton instance is already initialized.`)
