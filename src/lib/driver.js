@@ -13,6 +13,7 @@ export let config = getConfig()
  * @return {Object} - axios instance
  */
 export function getDriver ({ apiURL = config.apiURL, timeout = config.timeout } = {}) {
+  // console.log(`pleasure-api-client config`, { config })
   const driver = axios.create({
     timeout,
     baseURL: apiURL,
