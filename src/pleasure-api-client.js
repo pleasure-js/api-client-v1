@@ -20,7 +20,7 @@ let singleton
 export let debug = false
 
 export const defaultReduxOptions = {
-  autoConnect: process.server ? false : true
+  autoConnect: !!process.client
 }
 
 class ReduxClient extends EventEmitter {
