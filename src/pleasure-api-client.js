@@ -528,6 +528,22 @@ export class PleasureApiClient extends ReduxClient {
     }
   }
 
+  async me () {
+    if (!this._accessToken) {
+      return
+    }
+    // todo: hit and endpoint that blacklists the session
+    await this._driver({
+      url: `${ this.config.revokeEndpoint }`,
+      method: 'post'
+    })
+    return this._localLogout()
+  }
+
+  get accessToken () {
+    return this._accessToken
+  }
+
   /**
    * Cleans client credentials obtained by {@link PleasureApiClient#login}.
    */
