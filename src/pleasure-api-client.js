@@ -252,11 +252,11 @@ export class PleasureApiClient extends ReduxClient {
     super(baseURL, reduxOptions)
 
     this._driver = driver
-    this._accessToken = accessToken
-    this._refreshToken = refreshToken
     this._userProfile = null
     this._cache = []
     this.config = config
+
+    this.setCredentials({ accessToken, refreshToken })
 
     /**
      * Creates a manager for delegating magic access to entries or entities
@@ -379,6 +379,18 @@ export class PleasureApiClient extends ReduxClient {
     return new Proxy(this, handler)
   }
 
+  static debug (v) {
+    debug = !!v
+  }
+
+  setCredentials ({ accessToken = null, refreshToken = null } = {}) {
+    this._accessToken = accessToken
+    this._refreshToken = refreshToken
+
+    // important in order to set authorization via constructor
+    this._refreshCredentials()
+  }
+
   async proxyCacheReq ({ id, req }) {
     let res
     await Promise.each(this._cache, async (CacheHook) => {
@@ -449,7 +461,14 @@ export class PleasureApiClient extends ReduxClient {
   }
 
   _localLogout () {
-    this.emit('logout', this.userProfile)
+    if (!this._accessToken) {
+      return
+    }
+
+    const user = this.userProfile
+    this.setCredentials()
+    this.emit('logout', user)
+  }
 
     this._accessToken = null
     this._refreshToken = null
@@ -460,14 +479,16 @@ export class PleasureApiClient extends ReduxClient {
   _refreshCredentials () {
     // for redux
     this.token = this._accessToken
+    this._userProfile = this._accessToken ? jwtDecode(this._accessToken) : null
+    this._sessionBeat()
 
     if (!this._accessToken) {
       delete this._driver.defaults.headers.common['Authorization']
       return
     }
 
-    this.emit('login', this.userProfile)
     this._driver.defaults.headers.common['Authorization'] = `Bearer ${ this._accessToken }`
+    this.emit('login', this.userProfile)
   }
 
   get userProfile () {
@@ -517,10 +538,7 @@ export class PleasureApiClient extends ReduxClient {
       params
     })
 
-    this._accessToken = accessToken
-    this._refreshToken = refreshToken
-    this._userProfile = jwtDecode(accessToken)
-    this._refreshCredentials()
+    this.setCredentials({ accessToken, refreshToken })
 
     return {
       accessToken,
