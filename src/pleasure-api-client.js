@@ -253,6 +253,7 @@ export class PleasureApiClient extends ReduxClient {
 
     this._driver = driver
     this._userProfile = null
+    this._daemonSessionExpired = null
     this._cache = []
     this.config = config
 
@@ -470,10 +471,14 @@ export class PleasureApiClient extends ReduxClient {
     this.emit('logout', user)
   }
 
-    this._accessToken = null
-    this._refreshToken = null
-    this._userProfile = null
-    this._refreshCredentials()
+  _sessionBeat () {
+    clearTimeout(this._daemonSessionExpired)
+
+    if (!this.accessToken || !this.userProfile || this.userProfile.sessionExpires <= Date.now()) {
+      return this._localLogout()
+    }
+
+    this._daemonSessionExpired = setTimeout(this._sessionBeat.bind(this), Math.max(Math.round((this.userProfile.sessionExpires - Date.now()) * .75)), 1000)
   }
 
   _refreshCredentials () {
