@@ -11,7 +11,6 @@ import kebabCase from 'lodash/kebabCase';
 import forEach from 'lodash/forEach';
 import mapValues from 'lodash/mapValues';
 import objectHash from 'object-hash';
-import Promise from 'bluebird';
 import jwtDecode from 'jwt-decode';
 import { EventEmitter } from 'events';
 import merge from 'deepmerge';
@@ -113,6 +112,10 @@ function getDriver ({ apiURL = config.apiURL, timeout = config.timeout } = {}) {
  * @type getDriver
  */
 var driver = getDriver();
+
+Promise.each = async function (arr, fn) { // take an array and a function
+  for (const item of arr) await fn(item);
+};
 
 let _config = getConfig();
 
@@ -250,13 +253,12 @@ class ReduxClient extends EventEmitter {
         return { $regex: o.source, $options: o.flags }
       }
 
-      if (
-        typeof o === 'object'
-      ) {
+      if (typeof o === 'object') {
         return PleasureApiClient.queryParamEncode(o)
       }
 
-      return o
+      // temporary fix for listing with double quotes
+      return JSON.stringify(o)
     })
   }
 
@@ -515,6 +517,12 @@ class PleasureApiClient extends ReduxClient {
   async driver (req = {}) {
     const id = objectHash(req);
     const cache = await this.proxyCacheReq({ id, req });
+
+    if (req.params) {
+      console.log(`req.params`, req.params);
+      req.params = PleasureApiClient.queryParamEncode(req.params);
+      console.log(`santized params`, req.params);
+    }
 
     if (typeof cache !== 'undefined') {
       return cache
@@ -942,7 +950,7 @@ class PleasureApiClient extends ReduxClient {
     return this.driver({
       url,
       method: 'delete',
-      params: PleasureApiClient.queryParamEncode(params)
+      params
     })
   }
 
