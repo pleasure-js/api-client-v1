@@ -2,7 +2,6 @@
   "name": "pleasure-api-client",
   "description": "API client for pleasure.",
   "version": "1.0.0-beta",
-  "browser": "dist/pleasure-api-client.min.js",
   "main": "dist/pleasure-api-client.common.js",
   "module": "dist/pleasure-api-client.esm.js",
   "author": "Martin Rafael Gonzalez <tin@devtin.io>",
@@ -14,28 +13,27 @@
   },
   "dependencies": {
     "axios": "^0.19.0",
-    "deepmerge": "^4.1.1",
+    "deepmerge": "^4.2.1",
     "jwt-decode": "^2.2.0",
     "lodash": "^4.17.15",
     "object-hash": "^2.0.0",
     "pleasure-api": "keepwondering/pleasure-api#v1-beta",
     "pleasure-core-dev-tools": "keepwondering/pleasure-core-dev-tools#v1-beta",
     "qs": "^6.9.0",
-    "rollup-plugin-insert": "^1.1.0",
-    "rollup-plugin-node-globals": "^1.4.0",
     "socket.io-client": "^2.3.0"
   },
   "devDependencies": {
     "ava": "^2.4.0",
     "chai": "^4.2.0",
-    "nodemon": "^1.19.3",
-    "rollup": "^1.23.1",
+    "nodemon": "^1.19.4",
+    "rollup": "^1.26.0",
     "rollup-plugin-babel-minify": "^9.1.0",
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-json": "^4.0.0",
     "rollup-plugin-node-builtins": "^2.1.2",
+    "rollup-plugin-insert": "^1.1.0",
+    "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-replace": "^2.2.0",
-    "rollup-plugin-vue": "^5.0.1"
+    "rollup-plugin-replace": "^2.2.0"
   }
 }
