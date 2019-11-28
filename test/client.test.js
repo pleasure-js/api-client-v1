@@ -15,7 +15,11 @@ test.before(() => {
 })
 
 test.beforeEach(async t => {
-  return pleasureClient.logout()
+  try {
+    await pleasureClient.logout()
+  } catch (err) {
+    console.log(`logout error`, err)
+  }
 })
 
 const newDummyUser = {
