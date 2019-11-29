@@ -525,9 +525,7 @@ class PleasureApiClient extends ReduxClient {
     const cache = await this.proxyCacheReq({ id, req });
 
     if (req.params) {
-      console.log(`req.params`, req.params);
       req.params = PleasureApiClient.queryParamEncode(req.params);
-      console.log(`santized params`, req.params);
     }
 
     if (typeof cache !== 'undefined') {

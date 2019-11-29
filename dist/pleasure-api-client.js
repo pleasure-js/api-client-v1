@@ -97,6 +97,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
   };
 
   var merge = function merge(target, source, options) {
+      /* eslint no-param-reassign: 0 */
       if (!source) {
           return target;
       }
@@ -590,6 +591,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
   };
 
   var has$2 = Object.prototype.hasOwnProperty;
+  var isArray$2 = Array.isArray;
 
   var defaults$1 = {
       allowDots: false,
@@ -670,8 +672,12 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
               val = interpretNumericEntities(val);
           }
 
-          if (val && options.comma && val.indexOf(',') > -1) {
+          if (val && typeof val === 'string' && options.comma && val.indexOf(',') > -1) {
               val = val.split(',');
+          }
+
+          if (part.indexOf('[]=') > -1) {
+              val = isArray$2(val) ? [val] : val;
           }
 
           if (has$2.call(obj, key)) {
@@ -858,9 +864,9 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
    * _.isArray(_.noop);
    * // => false
    */
-  var isArray$2 = Array.isArray;
+  var isArray$3 = Array.isArray;
 
-  var isArray_1 = isArray$2;
+  var isArray_1 = isArray$3;
 
   var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -5016,10 +5022,10 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
   			return
   		}
 
-  		if (!options.isMergeableObject(source[key]) || !propertyIsOnObject(target, key)) {
-  			destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
-  		} else {
+  		if (propertyIsOnObject(target, key) && options.isMergeableObject(source[key])) {
   			destination[key] = getMergeFunction(key, options)(target[key], source[key], options);
+  		} else {
+  			destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
   		}
   	});
   	return destination
@@ -5395,7 +5401,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
   function hasOwnProperty$9(obj, prop) {
     return Object.prototype.hasOwnProperty.call(obj, prop);
   }
-  var isArray$3 = Array.isArray || function (xs) {
+  var isArray$4 = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
   };
   function stringifyPrimitive(v) {
@@ -5424,7 +5430,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
     if (typeof obj === 'object') {
       return map$1(objectKeys(obj), function(k) {
         var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
-        if (isArray$3(obj[k])) {
+        if (isArray$4(obj[k])) {
           return map$1(obj[k], function(v) {
             return ks + encodeURIComponent(stringifyPrimitive(v));
           }).join(sep);
@@ -5497,7 +5503,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
 
       if (!hasOwnProperty$9(obj, k)) {
         obj[k] = v;
-      } else if (isArray$3(obj[k])) {
+      } else if (isArray$4(obj[k])) {
         obj[k].push(v);
       } else {
         obj[k] = [obj[k], v];
@@ -6629,9 +6635,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
       const cache = await this.proxyCacheReq({ id, req });
 
       if (req.params) {
-        console.log(`req.params`, req.params);
         req.params = PleasureApiClient.queryParamEncode(req.params);
-        console.log(`santized params`, req.params);
       }
 
       if (typeof cache !== 'undefined') {
