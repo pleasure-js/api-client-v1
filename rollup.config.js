@@ -6,7 +6,7 @@ const json = require('rollup-plugin-json')
 const rollupBuiltins = require('rollup-plugin-node-builtins')
 const rollupReplace = require('rollup-plugin-replace')
 const merge = require('deepmerge')
-const { getConfig: getApiConfig, getPlugins: getApiPlugins } = require('pleasure-api')
+const { getConfig: getApiConfig, getPlugins: getApiPlugins } = require('@pleasure-js/api')
 const { port, entitiesUri, prefix } = getApiConfig()
 const { pluginsConfig: { jwt: { authEndpoint, revokeEndpoint } } } = getApiPlugins()
 const fs = require('fs')
@@ -42,7 +42,7 @@ const getPlugins = ({ minified = false, bundle = false, replace = {} } = {}) => 
     // socket.io-client
     // externals.push(fs.readFileSync(require.resolve('socket.io-client/dist/socket.io.js')).toString())
 
-    fs.writeFileSync(path.join(__dirname, './dist/pleasure-api-client-deps.js'), externals.join(`\n`))
+    fs.writeFileSync(path.join(__dirname, './dist/api-client-deps.js'), externals.join(`\n`))
 
     // console.log({ prepend })
     plugs.push(
@@ -71,7 +71,7 @@ const getPlugins = ({ minified = false, bundle = false, replace = {} } = {}) => 
 }
 
 const plugins = getPlugins()
-const name = 'PleasureApiClient'
+const name = 'ApiClient'
 
 const envReplace = {
   'process.env.API_ERROR': JSON.stringify(false),
@@ -88,15 +88,15 @@ const envReplace = {
 
 module.exports = [
   {
-    input: 'src/pleasure-api-client.js',
+    input: 'src/api-client.js',
     output: [
       {
-        file: 'dist/pleasure-api-client.common.js',
+        file: 'dist/api-client.common.js',
         format: 'cjs',
         banner
       },
       {
-        file: 'dist/pleasure-api-client.esm.js',
+        file: 'dist/api-client.esm.js',
         format: 'esm',
         banner
       }
@@ -104,10 +104,10 @@ module.exports = [
     plugins
   },
   {
-    input: 'src/pleasure-api-client.js',
+    input: 'src/api-client.js',
     output: [
       {
-        file: 'dist/pleasure-api-client.js',
+        file: 'dist/api-client.js',
         name,
         format: 'iife',
         banner
@@ -119,11 +119,11 @@ module.exports = [
     })
   },
   {
-    input: 'src/pleasure-api-client.js',
+    input: 'src/api-client.js',
     // external: ['crypto'],
     output: [
       {
-        file: 'dist/pleasure-api-client.min.js',
+        file: 'dist/api-client.min.js',
         name,
         format: 'iife',
         banner

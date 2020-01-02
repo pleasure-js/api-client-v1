@@ -1,9 +1,9 @@
 {
-  "name": "pleasure-api-client",
+  "name": "@pleasure-js/api-client",
   "description": "API client for pleasure.",
-  "version": "1.0.0-beta",
-  "main": "dist/pleasure-api-client.common.js",
-  "module": "dist/pleasure-api-client.esm.js",
+  "version": "1.0.0",
+  "main": "dist/api-client.common.js",
+  "module": "dist/api-client.esm.js",
   "author": "Martin Rafael Gonzalez <tin@devtin.io>",
   "license": "MIT",
   "scripts": {
@@ -17,8 +17,8 @@
     "jwt-decode": "^2.2.0",
     "lodash": "^4.17.15",
     "object-hash": "^2.0.0",
-    "pleasure-api": "keepwondering/pleasure-api#v1-beta",
-    "pleasure-core-dev-tools": "keepwondering/pleasure-core-dev-tools#v1-beta",
+    "@pleasure-js/api": "git@github.com:pleasure-js/api.git#v1-beta",
+    "@pleasure-js/dev-tools": "git@github.com:pleasure-js/dev-tools.git#v1-beta",
     "qs": "^6.9.0",
     "socket.io-client": "^2.3.0"
   },

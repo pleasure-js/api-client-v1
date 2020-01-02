@@ -1,30 +1,131 @@
-import apiDriver, { getDriver, config } from './lib/driver.js'
-import { ApiError } from './lib/api-error'
-import castArray from 'lodash/castArray'
-import kebabCase from 'lodash/kebabCase'
-import forEach from 'lodash/forEach'
-import mapValues from 'lodash/mapValues'
-import objectHash from 'object-hash'
-import jwtDecode from 'jwt-decode'
-import { EventEmitter } from 'events'
-import { getConfig } from './lib/get-config.js'
-import merge from 'deepmerge'
-import io from 'socket.io-client'
-import url from 'url'
+/*!
+ * @pleasure-js/api-client v1.0.0
+ * (c) 2018-2020 Martin Rafael Gonzalez <tin@devtin.io>
+ * Released under the MIT License.
+ */
+import axios from 'axios';
+import qs from 'qs';
+import get from 'lodash/get';
+import castArray from 'lodash/castArray';
+import kebabCase from 'lodash/kebabCase';
+import forEach from 'lodash/forEach';
+import mapValues from 'lodash/mapValues';
+import objectHash from 'object-hash';
+import jwtDecode from 'jwt-decode';
+import { EventEmitter } from 'events';
+import merge from 'deepmerge';
+import io from 'socket.io-client';
+import url from 'url';
+
+/**
+ * Used to throw errors returned by the API server.
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error|Error}
+ */
+class ApiError extends Error {
+  /**
+   *
+   * @param {String} error - Error name.
+   * @param {String} message
+   * @param {Number} [code=500] - Error number.
+   * @param data
+   */
+  constructor (error, message, code = 500, data) {
+    super(error);
+    this.message = message;
+    this.code = code;
+    this.data = data;
+  }
+}
+
+/**
+ * @typedef {Object} ApiClientConfig
+ * @property {Object} api - PleasureApi related configuration.
+ * @property {String} [appURL=http://localhost:3000] - URL to the APP
+ * @property {String} [apiURL=http://localhost:3000/api] - URL to the API server
+ * @property {String} [entitiesUri=/entities] - endpoint where to access the entities schema.
+ * @property {String} [authEndpoint=/token] - endpoint where to exchange credentials for accessToken / refreshToken.
+ * @property {String} [revokeEndpoint=/revoke] - endpoint where to exchange credentials for accessToken / refreshToken.
+ * @property {Number} [timeout=15000] - axios timeout in ms.
+ */
+
+function getConfig () {
+  const appURL = (process.server && process.env.PLEASURE_MODE === '3-tier' ? process.env.PLEASURE_CLIENT_APP_SERVER_URL : process.env.PLEASURE_CLIENT_APP_URL) || `http://localhost:${ 3000 }`;
+  const apiURL = `${ appURL }${ "/api" }`;
+  return {
+    appURL,
+    apiURL: process.env.PLEASURE_CLIENT_API_URL || apiURL,
+    entitiesUri: process.env.PLEASURE_CLIENT_ENTITIES_URI || "/entities",
+    authEndpoint: process.env.PLEASURE_CLIENT_AUTH_ENDPOINT || "/token",
+    revokeEndpoint: process.env.PLEASURE_CLIENT_REVOKE_ENDPOINT || "/revoke",
+    timeout: 15000
+  }
+}
+
+let config = getConfig();
+
+/**
+ * Creates an axios instance able to handle API responses
+ * @param {String} apiURL - URL of the API
+ * @param {Number} timeout - Timeout in milliseconds
+ * @return {Object} - axios instance
+ */
+function getDriver ({ apiURL = config.apiURL, timeout = config.timeout } = {}) {
+  const driver = axios.create({
+    timeout,
+    baseURL: apiURL,
+    paramsSerializer (params) {
+      return qs.stringify(params, { arrayFormat: 'brackets' })
+    },
+    headers: {
+      'X-Pleasure-Client': "1.0.0"
+    }
+  });
+
+  driver.interceptors.response.use((response) => {
+      const { data: { statusCode, data, error, message } } = response || {};
+
+      if (statusCode === 200) {
+        return data
+      }
+
+      throw new ApiError(error, message, statusCode, data)
+    },
+    err => {
+      const { errors, error } = get(err, 'response.data', {});
+
+      if (process.env.API_ERROR) {
+        if (err && err.response) {
+          console.log(`[api:${ err.config.method }(${ err.response.status }/${ err.response.statusText }) => ${ err.config.url }] ${ JSON.stringify(err.response.data) }`);
+        } else {
+          console.log(`[api:`, err);
+        }
+      }
+
+      throw new Error(error || 'Unknown error')
+    });
+
+  return driver
+}
+
+/**
+ * Instance of getDriver using default values.
+ * @type getDriver
+ */
+var driver = getDriver();
 
 Promise.each = async function (arr, fn) { // take an array and a function
-  for (const item of arr) await fn(item)
-}
+  for (const item of arr) await fn(item);
+};
 
-let _config = getConfig()
+let _config = getConfig();
 
-let singleton
+let singleton;
 
-export let debug = false
+let debug = false;
 
-export const defaultReduxOptions = {
+const defaultReduxOptions = {
   autoConnect: !!process.client
-}
+};
 
 class ReduxClient extends EventEmitter {
   /**
@@ -34,19 +135,19 @@ class ReduxClient extends EventEmitter {
    * @param {Boolean} [options.autoConnect=true] - Whether to auto-connect to socket.io at init or not.
    */
   constructor (apiURL, options = {}) {
-    super()
-    options = merge.all([options, defaultReduxOptions, options])
-    const { protocol, host, pathname } = url.parse(apiURL)
-    this._options = options
-    this._token = null
-    this._isConnected = false
-    this._isConnecting = false
-    this._connectedAuth = null
-    this._host = `${ protocol }//${ host }`
-    this._path = `${ pathname }-socket`
-    this._socketId = null
+    super();
+    options = merge.all([options, defaultReduxOptions, options]);
+    const { protocol, host, pathname } = url.parse(apiURL);
+    this._options = options;
+    this._token = null;
+    this._isConnected = false;
+    this._isConnecting = false;
+    this._connectedAuth = null;
+    this._host = `${ protocol }//${ host }`;
+    this._path = `${ pathname }-socket`;
+    this._socketId = null;
 
-    this._socket = null
+    this._socket = null;
 
     this._binds = {
       error: this._error.bind(this),
@@ -56,13 +157,13 @@ class ReduxClient extends EventEmitter {
       update: this._proxySocket.bind(this, 'update'),
       delete: this._proxySocket.bind(this, 'delete'),
       '*': (event, payload) => {
-        debug && console.log(`emit all`, { event, payload })
-        this.emit('*', event, payload)
+        debug && console.log(`emit all`, { event, payload });
+        this.emit('*', event, payload);
       }
-    }
+    };
 
     if (this._options.autoConnect) {
-      this.connect()
+      this.connect();
     }
   }
 
@@ -71,9 +172,9 @@ class ReduxClient extends EventEmitter {
       return
     }
 
-    this._isConnecting = true
-    this._isConnected = false
-    this._connectedAuth = this.token
+    this._isConnecting = true;
+    this._isConnected = false;
+    this._connectedAuth = this.token;
 
     const auth = Object.assign({ forceNew: true, path: this._path }, this.token ? {
       transportOptions: {
@@ -83,49 +184,49 @@ class ReduxClient extends EventEmitter {
           }
         }
       }
-    } : {})
+    } : {});
 
     if (this._socket) {
-      debug && this._socketId && console.log(`disconnecting from ${ this._socketId }`)
-      this._unwireSocket()
-      this._socket.disconnect(true)
+      debug && this._socketId && console.log(`disconnecting from ${ this._socketId }`);
+      this._unwireSocket();
+      this._socket.disconnect(true);
     }
 
-    debug && console.log(`connecting ${ this.token ? 'with' : 'without' } credentials`)
-    const theSocket = io(this._host, auth)
+    debug && console.log(`connecting ${ this.token ? 'with' : 'without' } credentials`);
+    const theSocket = io(this._host, auth);
 
     if (debug) {
       theSocket.on('connect', () => {
         if (this._socket === theSocket) {
-          this._socketId = theSocket.id
-          debug && console.log(`pleasure-api-client connected with id ${ theSocket.id }`)
+          this._socketId = theSocket.id;
+          debug && console.log(`@pleasure-js/api-client connected with id ${ theSocket.id }`);
         } else {
-          debug && console.log(`BEWARE! pleasure-api-client connected with id ${ theSocket.id } but not the main driver`)
+          debug && console.log(`BEWARE! @pleasure-js/api-client connected with id ${ theSocket.id } but not the main driver`);
         }
-      })
+      });
 
       theSocket.on('disconnect', (reason) => {
-        debug && console.log(`pleasure-api-client disconnected due to ${ reason }`)
-      })
+        debug && console.log(`@pleasure-js/api-client disconnected due to ${ reason }`);
+      });
 
       theSocket.on('reconnecting', (attemptNumber) => {
-        debug && console.log(`pleasure-api-client reconnecting attempt # ${ attemptNumber }`)
-      })
+        debug && console.log(`@pleasure-js/api-client reconnecting attempt # ${ attemptNumber }`);
+      });
     }
 
-    theSocket.onevent = ReduxClient._onEvent(theSocket.onevent)
+    theSocket.onevent = ReduxClient._onEvent(theSocket.onevent);
 
-    this._socket = theSocket
-    this._wireSocket()
+    this._socket = theSocket;
+    this._wireSocket();
   }
 
   static _onEvent (event) {
     return function (packet) {
-      debug && console.log(`receiving packet ${ packet }`)
-      const args = packet.data || []
-      event.call(this, packet)
-      packet.data = ['*'].concat(args)
-      event.call(this, packet)
+      debug && console.log(`receiving packet ${ packet }`);
+      const args = packet.data || [];
+      event.call(this, packet);
+      packet.data = ['*'].concat(args);
+      event.call(this, packet);
     }
   }
 
@@ -153,7 +254,7 @@ class ReduxClient extends EventEmitter {
       }
 
       if (typeof o === 'object') {
-        return PleasureApiClient.queryParamEncode(o)
+        return ApiClient.queryParamEncode(o)
       }
 
       // temporary fix for listing with double quotes
@@ -163,40 +264,40 @@ class ReduxClient extends EventEmitter {
 
   _wiring (methods, on = true, altMethod) {
     methods.forEach(method => {
-      this._socket[on ? 'on' : 'off'](method, altMethod || this._binds[method])
-    })
+      this._socket[on ? 'on' : 'off'](method, altMethod || this._binds[method]);
+    });
   }
 
   _unwireSocket () {
-    this._wiring(Object.keys(this._binds), false)
-    this._socket.removeAllListeners()
+    this._wiring(Object.keys(this._binds), false);
+    this._socket.removeAllListeners();
   }
 
   _wireSocket () {
-    this._wiring(Object.keys(this._binds))
+    this._wiring(Object.keys(this._binds));
   }
 
   _proxySocket (method, payload) {
-    debug && console.log(`proxy socket`, { method, payload })
-    this.emit(method, payload)
+    debug && console.log(`proxy socket`, { method, payload });
+    this.emit(method, payload);
   }
 
   _error (...args) {
-    this._isConnecting = false
-    this.emit('error', ...args)
+    this._isConnecting = false;
+    this.emit('error', ...args);
   }
 
   _connect () {
-    debug && console.log(`connected ${ this._socket.id }`)
-    this._isConnected = true
-    this._isConnecting = false
-    this.emit('connect')
+    debug && console.log(`connected ${ this._socket.id }`);
+    this._isConnected = true;
+    this._isConnecting = false;
+    this.emit('connect');
   }
 
   _disconnect (err) {
-    debug && console.log(`disconnected ${ this._socket.id }`)
-    this._isConnected = false
-    this.emit('disconnect')
+    debug && console.log(`disconnected ${ this._socket.id }`);
+    this._isConnected = false;
+    this.emit('disconnect');
   }
 
   get socket () {
@@ -208,15 +309,15 @@ class ReduxClient extends EventEmitter {
   }
 
   set token (v) {
-    this._token = v
-    this.connect()
+    this._token = v;
+    this.connect();
     return v
   }
 }
 
 /**
  * Client for querying the API server.
- * @name PleasureApiClient
+ * @name ApiClient
  *
  * @see {@link pleasureClient} for a singleton instance of this class.
  *
@@ -235,7 +336,7 @@ class ReduxClient extends EventEmitter {
  *   })
  * ```
  */
-export class PleasureApiClient extends ReduxClient {
+class ApiClient extends ReduxClient {
   /**
    * Initializes a client driver for the API server.
    * @constructor
@@ -248,18 +349,18 @@ export class PleasureApiClient extends ReduxClient {
    * @param {Object} [options.reduxOptions] - Redux options. See {@link ReduxClient}.
    */
   constructor (options) {
-    const { accessToken, refreshToken, driver = getDriver(), config = _config, reduxOptions = {} } = options || {}
-    debug && console.log(`initializing pleasure-api-client`, { reduxOptions })
-    const { baseURL } = driver.defaults
-    super(baseURL, reduxOptions)
+    const { accessToken, refreshToken, driver = getDriver(), config = _config, reduxOptions = {} } = options || {};
+    debug && console.log(`initializing @pleasure-js/api-client`, { reduxOptions });
+    const { baseURL } = driver.defaults;
+    super(baseURL, reduxOptions);
 
-    this._driver = driver
-    this._userProfile = null
-    this._daemonSessionExpired = null
-    this._cache = []
-    this.config = config
+    this._driver = driver;
+    this._userProfile = null;
+    this._daemonSessionExpired = null;
+    this._cache = [];
+    this.config = config;
 
-    this.setCredentials({ accessToken, refreshToken })
+    this.setCredentials({ accessToken, refreshToken });
 
     /**
      * Creates a manager for delegating magic access to entries or entities
@@ -268,22 +369,22 @@ export class PleasureApiClient extends ReduxClient {
      * @return {Function} - The binder manager
      */
     const DelegatorManager = (Binder) => {
-      const handlers = {}
+      const handlers = {};
       return (name, ...args) => {
         const id = objectHash({
           name,
           args
-        })
+        });
         if (handlers[id]) {
           return handlers[id]
         }
 
         return handlers[id] = Binder(name, ...args)
       }
-    }
+    };
 
     const EntryHandler = (entityName, id) => {
-      const eventMapper = []
+      const eventMapper = [];
 
       function eventCallback (cb, { entity: theEntity, entry }) {
         if (entityName !== theEntity) {
@@ -291,23 +392,23 @@ export class PleasureApiClient extends ReduxClient {
         }
         castArray(entry).forEach((payload) => {
           if (payload._id === id) {
-            cb(payload)
+            cb(payload);
           }
-        })
+        });
       }
 
       function findEventCallback (cb) {
-        let bind
+        let bind;
         forEach(eventMapper, ({ cb: _cb, bind: _bind }) => {
           if (_cb === cb) {
-            bind = _bind
+            bind = _bind;
             return false
           }
-        })
+        });
 
         if (!bind) {
-          bind = eventCallback.bind(null, cb)
-          eventMapper.push({ cb, bind })
+          bind = eventCallback.bind(null, cb);
+          eventMapper.push({ cb, bind });
         }
 
         return bind
@@ -317,7 +418,7 @@ export class PleasureApiClient extends ReduxClient {
         get (obj, prop) {
           if (/^(on|off|once|emit)$/.test(prop)) {
             return (event, cb) => {
-              obj[prop](event, findEventCallback(cb))
+              obj[prop](event, findEventCallback(cb));
             }
           }
 
@@ -328,10 +429,10 @@ export class PleasureApiClient extends ReduxClient {
         apply () {
           // console.log(`applying ${ entityName }`)
         }
-      }
+      };
 
       return new Proxy(this, handler)
-    }
+    };
 
     const EntityHandler = (entityName) => {
       const handler = {
@@ -347,13 +448,13 @@ export class PleasureApiClient extends ReduxClient {
           // bind controllers
           return obj.controller.bind(obj, entityName, kebabCase(prop))
         }
-      }
+      };
 
       return new Proxy(this, handler)
-    }
+    };
 
-    const EntityDelegator = DelegatorManager(EntityHandler)
-    const EntryDelegator = DelegatorManager(EntryHandler)
+    const EntityDelegator = DelegatorManager(EntityHandler);
+    const EntryDelegator = DelegatorManager(EntryHandler);
 
     /*
     Initial handler
@@ -361,7 +462,7 @@ export class PleasureApiClient extends ReduxClient {
      */
     const handler = {
       get (obj, prop) {
-        const entityName = prop
+        const entityName = prop;
 
         if (typeof entityName === 'string' && !(entityName in obj)) {
           return new Proxy(() => {}, {
@@ -377,62 +478,62 @@ export class PleasureApiClient extends ReduxClient {
 
         return obj[prop]
       }
-    }
+    };
 
     return new Proxy(this, handler)
   }
 
   static debug (v) {
-    debug = !!v
+    debug = !!v;
   }
 
   setCredentials ({ accessToken = null, refreshToken = null } = {}) {
-    this._accessToken = accessToken
-    this._refreshToken = refreshToken
+    this._accessToken = accessToken;
+    this._refreshToken = refreshToken;
 
     // important in order to set authorization via constructor
-    this._refreshCredentials()
+    this._refreshCredentials();
   }
 
   async proxyCacheReq ({ id, req }) {
-    let res
+    let res;
     await Promise.each(this._cache, async (CacheHook) => {
-      res = await CacheHook.req({ id, req })
+      res = await CacheHook.req({ id, req });
       if (typeof res !== 'undefined') {
         return false
       }
-    })
+    });
     return res
   }
 
   async proxyCacheRes ({ id, req, res }) {
     await Promise.each(this._cache, async (CacheHook) => {
-      await CacheHook.res({ id, req, res })
-    })
+      await CacheHook.res({ id, req, res });
+    });
 
     return res
   }
 
   async driver (req = {}) {
-    const id = objectHash(req)
-    const cache = await this.proxyCacheReq({ id, req })
+    const id = objectHash(req);
+    const cache = await this.proxyCacheReq({ id, req });
 
     if (req.params) {
-      req.params = PleasureApiClient.queryParamEncode(req.params)
+      req.params = ApiClient.queryParamEncode(req.params);
     }
 
     if (typeof cache !== 'undefined') {
       return cache
     }
 
-    debug && console.log(`pleasure-api-client calling>`, { req }, `${ this.accessToken ? 'with auth' : ' without auth' }`)
-    const res = await this._driver(req)
+    debug && console.log(`@pleasure-js/api-client calling>`, { req }, `${ this.accessToken ? 'with auth' : ' without auth' }`);
+    const res = await this._driver(req);
 
     this
       .proxyCacheRes({ id, req, res })
       .catch(err => {
-        console.log(`Proxy cache res error:`, err)
-      })
+        console.log(`Proxy cache res error:`, err);
+      });
 
     return res
   }
@@ -464,7 +565,7 @@ export class PleasureApiClient extends ReduxClient {
    * @param {CacheHook} cacheHook - The {@link CacheHook} to use.
    */
   cache (cacheHook) {
-    this._cache.push(cacheHook)
+    this._cache.push(cacheHook);
   }
 
   _localLogout () {
@@ -472,34 +573,34 @@ export class PleasureApiClient extends ReduxClient {
       return
     }
 
-    const user = this.userProfile
-    this.setCredentials()
-    this.emit('logout', user)
+    const user = this.userProfile;
+    this.setCredentials();
+    this.emit('logout', user);
   }
 
   _sessionBeat () {
-    clearTimeout(this._daemonSessionExpired)
+    clearTimeout(this._daemonSessionExpired);
 
     if (!this.accessToken || !this.userProfile || this.userProfile.sessionExpires <= Date.now()) {
       return this._localLogout()
     }
 
-    this._daemonSessionExpired = setTimeout(this._sessionBeat.bind(this), Math.max(Math.round((this.userProfile.sessionExpires - Date.now()) * .75)), 1000)
+    this._daemonSessionExpired = setTimeout(this._sessionBeat.bind(this), Math.max(Math.round((this.userProfile.sessionExpires - Date.now()) * .75)), 1000);
   }
 
   _refreshCredentials () {
     // for redux
-    this.token = this._accessToken
-    this._userProfile = this._accessToken ? jwtDecode(this._accessToken) : null
-    this._sessionBeat()
+    this.token = this._accessToken;
+    this._userProfile = this._accessToken ? jwtDecode(this._accessToken) : null;
+    this._sessionBeat();
 
     if (!this._accessToken) {
-      delete this._driver.defaults.headers.common['Authorization']
+      delete this._driver.defaults.headers.common['Authorization'];
       return
     }
 
-    this._driver.defaults.headers.common['Authorization'] = `Bearer ${ this._accessToken }`
-    this.emit('login', this.userProfile)
+    this._driver.defaults.headers.common['Authorization'] = `Bearer ${ this._accessToken }`;
+    this.emit('login', this.userProfile);
   }
 
   get userProfile () {
@@ -541,15 +642,15 @@ export class PleasureApiClient extends ReduxClient {
    *   })
    */
   async login (credentials, params = {}) {
-    this._localLogout()
+    this._localLogout();
     const { accessToken, refreshToken } = await this.driver({
       url: `${ this.config.authEndpoint }`,
       method: 'post',
       data: credentials,
       params
-    })
+    });
 
-    this.setCredentials({ accessToken, refreshToken })
+    this.setCredentials({ accessToken, refreshToken });
 
     return {
       accessToken,
@@ -565,7 +666,7 @@ export class PleasureApiClient extends ReduxClient {
     await this._driver({
       url: `${ this.config.revokeEndpoint }`,
       method: 'post'
-    })
+    });
     return this._localLogout()
   }
 
@@ -574,14 +675,14 @@ export class PleasureApiClient extends ReduxClient {
   }
 
   /**
-   * Cleans client credentials obtained by {@link PleasureApiClient#login}.
+   * Cleans client credentials obtained by {@link ApiClient#login}.
    */
   async logout () {
     // todo: hit and endpoint that blacklists the session
     await this._driver({
       url: `${ this.config.revokeEndpoint }`,
       method: 'post'
-    })
+    });
     return this._localLogout()
   }
 
@@ -714,8 +815,8 @@ export class PleasureApiClient extends ReduxClient {
       throw new Error(`Provide both entity and id`)
     }
 
-    const endpoint = [entity, id, target].filter(p => !!p).join('/')
-    const url = `/${ endpoint }`
+    const endpoint = [entity, id, target].filter(p => !!p).join('/');
+    const url = `/${ endpoint }`;
     return this.driver({
       url,
       params
@@ -832,16 +933,16 @@ export class PleasureApiClient extends ReduxClient {
    *   })
    */
   delete (entity, id, params = {}) {
-    let url = `/${ entity }`
+    let url = `/${ entity }`;
 
     // handle multiple ids
     if (typeof id === 'object') {
-      Object.assign(params, { id: Array.isArray(id) ? castArray(id) : id })
-      id = null
+      Object.assign(params, { id: Array.isArray(id) ? castArray(id) : id });
+      id = null;
     }
 
     if (id) {
-      url += `/${ id }`
+      url += `/${ id }`;
     }
 
     return this.driver({
@@ -879,7 +980,7 @@ export class PleasureApiClient extends ReduxClient {
       throw Error(`Provide both 'entity' and 'controller'.`)
     }
 
-    const url = `${ entity }/${ controller }`
+    const url = `${ entity }/${ controller }`;
 
     return this.driver({
       url,
@@ -935,7 +1036,7 @@ export class PleasureApiClient extends ReduxClient {
   }
 
   static instance (opts) {
-    debug && console.log(`pleasure-client-instance`, { opts })
+    debug && console.log(`pleasure-client-instance`, { opts });
     if (singleton) {
       if (opts) {
         throw new Error(`Opts not accepted since singleton instance is already initialized.`)
@@ -943,14 +1044,14 @@ export class PleasureApiClient extends ReduxClient {
       return singleton
     }
 
-    singleton = new PleasureApiClient(opts)
+    singleton = new ApiClient(opts);
     return singleton
   }
 }
 
 /**
- * Singleton instance of {@link PleasureApiClient}.
- * @type {PleasureApiClient}
+ * Singleton instance of {@link ApiClient}.
+ * @type {ApiClient}
  * @instance pleasureClient
  *
  * @example
@@ -968,6 +1069,6 @@ export class PleasureApiClient extends ReduxClient {
  *   })
  */
 
-const instance = PleasureApiClient.instance.bind(PleasureApiClient)
+const instance = ApiClient.instance.bind(ApiClient);
 
-export { getConfig, getDriver, ApiError, apiDriver, config, instance }
+export { ApiClient, ApiError, driver as apiDriver, config, debug, defaultReduxOptions, getConfig, getDriver, instance };

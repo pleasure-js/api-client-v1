@@ -1,8 +1,8 @@
 import test from 'ava'
 import { expect } from 'chai'
-import { PleasureApiClient, getConfig } from '../' // pleasure-api-client
+import { PleasureApiClient, getConfig } from '../' // @pleasure-js/api-client
 import 'pleasure-api/test/utils/web-server.js'
-import 'pleasure-core-dev-tools/test/clean-db-per-test.js'
+import '@pleasure-js/dev-tools/test/clean-db-per-test.js'
 import { pick } from 'lodash'
 
 let pleasureClient

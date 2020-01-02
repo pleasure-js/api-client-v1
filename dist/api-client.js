@@ -1,6 +1,6 @@
 /*!
- * pleasure-api-client v1.0.0-beta
- * (c) 2018-2019 Martin Rafael Gonzalez <tin@devtin.io>
+ * @pleasure-js/api-client v1.0.0
+ * (c) 2018-2020 Martin Rafael Gonzalez <tin@devtin.io>
  * Released under the MIT License.
  */
 var PleasureApiClient = (function (exports, axios, objectHash, io) {
@@ -2050,7 +2050,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
         return lib.stringify(params, { arrayFormat: 'brackets' })
       },
       headers: {
-        'X-Pleasure-Client': "1.0.0-beta"
+        'X-Pleasure-Client': "1.0.0"
       }
     });
 
@@ -6315,18 +6315,18 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
         theSocket.on('connect', () => {
           if (this._socket === theSocket) {
             this._socketId = theSocket.id;
-            exports.debug && console.log(`pleasure-api-client connected with id ${ theSocket.id }`);
+            exports.debug && console.log(`@pleasure-js/api-client connected with id ${ theSocket.id }`);
           } else {
-            exports.debug && console.log(`BEWARE! pleasure-api-client connected with id ${ theSocket.id } but not the main driver`);
+            exports.debug && console.log(`BEWARE! @pleasure-js/api-client connected with id ${ theSocket.id } but not the main driver`);
           }
         });
 
         theSocket.on('disconnect', (reason) => {
-          exports.debug && console.log(`pleasure-api-client disconnected due to ${ reason }`);
+          exports.debug && console.log(`@pleasure-js/api-client disconnected due to ${ reason }`);
         });
 
         theSocket.on('reconnecting', (attemptNumber) => {
-          exports.debug && console.log(`pleasure-api-client reconnecting attempt # ${ attemptNumber }`);
+          exports.debug && console.log(`@pleasure-js/api-client reconnecting attempt # ${ attemptNumber }`);
         });
       }
 
@@ -6370,7 +6370,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
         }
 
         if (typeof o === 'object') {
-          return PleasureApiClient.queryParamEncode(o)
+          return ApiClient.queryParamEncode(o)
         }
 
         // temporary fix for listing with double quotes
@@ -6433,7 +6433,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
 
   /**
    * Client for querying the API server.
-   * @name PleasureApiClient
+   * @name ApiClient
    *
    * @see {@link pleasureClient} for a singleton instance of this class.
    *
@@ -6452,7 +6452,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
    *   })
    * ```
    */
-  class PleasureApiClient extends ReduxClient {
+  class ApiClient extends ReduxClient {
     /**
      * Initializes a client driver for the API server.
      * @constructor
@@ -6466,7 +6466,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
      */
     constructor (options) {
       const { accessToken, refreshToken, driver = getDriver(), config = _config, reduxOptions = {} } = options || {};
-      exports.debug && console.log(`initializing pleasure-api-client`, { reduxOptions });
+      exports.debug && console.log(`initializing @pleasure-js/api-client`, { reduxOptions });
       const { baseURL } = driver.defaults;
       super(baseURL, reduxOptions);
 
@@ -6635,14 +6635,14 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
       const cache = await this.proxyCacheReq({ id, req });
 
       if (req.params) {
-        req.params = PleasureApiClient.queryParamEncode(req.params);
+        req.params = ApiClient.queryParamEncode(req.params);
       }
 
       if (typeof cache !== 'undefined') {
         return cache
       }
 
-      exports.debug && console.log(`pleasure-api-client calling>`, { req }, `${ this.accessToken ? 'with auth' : ' without auth' }`);
+      exports.debug && console.log(`@pleasure-js/api-client calling>`, { req }, `${ this.accessToken ? 'with auth' : ' without auth' }`);
       const res = await this._driver(req);
 
       this
@@ -6791,7 +6791,7 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
     }
 
     /**
-     * Cleans client credentials obtained by {@link PleasureApiClient#login}.
+     * Cleans client credentials obtained by {@link ApiClient#login}.
      */
     async logout () {
       // todo: hit and endpoint that blacklists the session
@@ -7160,14 +7160,14 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
         return singleton
       }
 
-      singleton = new PleasureApiClient(opts);
+      singleton = new ApiClient(opts);
       return singleton
     }
   }
 
   /**
-   * Singleton instance of {@link PleasureApiClient}.
-   * @type {PleasureApiClient}
+   * Singleton instance of {@link ApiClient}.
+   * @type {ApiClient}
    * @instance pleasureClient
    *
    * @example
@@ -7185,10 +7185,10 @@ var PleasureApiClient = (function (exports, axios, objectHash, io) {
    *   })
    */
 
-  const instance = PleasureApiClient.instance.bind(PleasureApiClient);
+  const instance = ApiClient.instance.bind(ApiClient);
 
+  exports.ApiClient = ApiClient;
   exports.ApiError = ApiError;
-  exports.PleasureApiClient = PleasureApiClient;
   exports.apiDriver = driver;
   exports.config = config;
   exports.defaultReduxOptions = defaultReduxOptions;
